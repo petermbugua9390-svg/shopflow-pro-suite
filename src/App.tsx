@@ -8,9 +8,13 @@ import Dashboard from "./pages/Dashboard";
 import POSTerminal from "./pages/POSTerminal";
 import Inventory from "./pages/Inventory";
 import SalesHistory from "./pages/SalesHistory";
-import PlaceholderPage from "./pages/PlaceholderPage";
+import Analytics from "./pages/Analytics";
+import Customers from "./pages/Customers";
+import Suppliers from "./pages/Suppliers";
+import Reports from "./pages/Reports";
+import Branches from "./pages/Branches";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import { Users, Truck, BarChart3, Store, TrendingUp, Settings } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -26,12 +30,12 @@ const App = () => (
             <Route path="/pos" element={<POSTerminal />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/sales" element={<SalesHistory />} />
-            <Route path="/customers" element={<PlaceholderPage title="Customers" description="Customer profiles, loyalty programs, and CRM features coming soon." icon={<Users className="h-8 w-8" />} />} />
-            <Route path="/suppliers" element={<PlaceholderPage title="Suppliers" description="Supplier management, purchase orders, and procurement coming soon." icon={<Truck className="h-8 w-8" />} />} />
-            <Route path="/analytics" element={<PlaceholderPage title="Analytics" description="AI-powered business intelligence and reporting coming soon." icon={<BarChart3 className="h-8 w-8" />} />} />
-            <Route path="/branches" element={<PlaceholderPage title="Branches" description="Multi-branch management and cross-location inventory coming soon." icon={<Store className="h-8 w-8" />} />} />
-            <Route path="/reports" element={<PlaceholderPage title="Reports" description="Financial reports, P&L statements, and tax reports coming soon." icon={<TrendingUp className="h-8 w-8" />} />} />
-            <Route path="/settings" element={<PlaceholderPage title="Settings" description="System configuration, user management, and integrations coming soon." icon={<Settings className="h-8 w-8" />} />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/branches" element={<Branches />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
