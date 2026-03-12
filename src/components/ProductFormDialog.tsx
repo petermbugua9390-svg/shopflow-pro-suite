@@ -61,7 +61,13 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
 
   const onSubmit = (values: FormValues) => {
     const payload = {
-      ...values,
+      name: values.name,
+      sku: values.sku,
+      price: values.price,
+      cost_price: values.cost_price,
+      stock_quantity: values.stock_quantity,
+      reorder_level: values.reorder_level,
+      unit: values.unit || "each",
       category_id: values.category_id || null,
       barcode: values.barcode || null,
     };
