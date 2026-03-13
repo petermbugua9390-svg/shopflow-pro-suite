@@ -1,30 +1,66 @@
 import { useState, useMemo } from "react";
-import { mockProducts, mockCategories, type Product, type CartItem } from "@/data/mockData";
-import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone, X } from "lucide-react";
+import { useProducts, useProductCategories } from "@/hooks/useProducts";
+import { useCheckout } from "@/hooks/useSales";
+import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  sku: string | null;
+  unit: string | null;
+  category_name: string | null;
+  stock_quantity: number;
+}
 
 export default function POSTerminal() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [cart, setCart] = useState<CartItem[]>([]);
 
+  const { data: products, isLoading: productsLoading } = useProducts();
+  const { data: categories } = useProductCategories();
+  const checkout = useCheckout();
+
+  const categoryNames = useMemo(() => {
+    const names = ["All", ...(categories?.map((c) => c.name) ?? [])];
+    return names;
+  }, [categories]);
+
   const filteredProducts = useMemo(() => {
-    return mockProducts.filter((p) => {
-      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.sku.toLowerCase().includes(searchQuery.toLowerCase()) || p.barcode.includes(searchQuery);
-      const matchesCategory = activeCategory === "All" || p.category === activeCategory;
+    if (!products) return [];
+    return products.filter((p) => {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        p.name.toLowerCase().includes(q) ||
+        (p.sku?.toLowerCase().includes(q) ?? false) ||
+        (p.barcode?.includes(searchQuery) ?? false);
+      const matchesCategory =
+        activeCategory === "All" || p.product_categories?.name === activeCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, activeCategory]);
+  }, [products, searchQuery, activeCategory]);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: NonNullable<typeof products>[0]) => {
     setCart((prev) => {
       const existing = prev.find((i) => i.id === product.id);
       if (existing) return prev.map((i) => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, {
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        quantity: 1,
+        sku: product.sku,
+        unit: product.unit,
+        category_name: product.product_categories?.name ?? null,
+        stock_quantity: product.stock_quantity,
+      }];
     });
   };
 
@@ -39,17 +75,34 @@ export default function POSTerminal() {
   const tax = subtotal * 0.08;
   const total = subtotal + tax;
 
-  const handleCheckout = (method: string) => {
+  const handleCheckout = (method: "card" | "cash" | "mobile") => {
     if (cart.length === 0) return;
-    toast.success(`Payment of $${total.toFixed(2)} processed via ${method}`);
-    setCart([]);
+    checkout.mutate(
+      {
+        items: cart.map((i) => ({
+          product_id: i.id,
+          quantity: i.quantity,
+          unit_price: i.price,
+          total: i.price * i.quantity,
+        })),
+        subtotal,
+        tax_amount: tax,
+        total,
+        payment_method: method,
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Payment of $${total.toFixed(2)} processed via ${method}`);
+          setCart([]);
+        },
+      }
+    );
   };
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
       {/* Products Side */}
       <div className="flex-1 flex flex-col min-w-0 p-4">
-        {/* Search + Categories */}
         <div className="space-y-3 mb-4">
           <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
             <Search className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -63,7 +116,7 @@ export default function POSTerminal() {
             />
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {mockCategories.map((cat) => (
+            {categoryNames.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
@@ -79,28 +132,35 @@ export default function POSTerminal() {
           </div>
         </div>
 
-        {/* Product Grid */}
         <div className="flex-1 overflow-auto">
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5">
-            {filteredProducts.map((product) => (
-              <button
-                key={product.id}
-                onClick={() => addToCart(product)}
-                className="glass-card rounded-xl p-3.5 text-left hover:ring-2 hover:ring-primary/30 transition-all active:scale-[0.98]"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <Badge variant="secondary" className="text-[10px]">{product.category}</Badge>
-                  <span className="text-[10px] text-muted-foreground font-mono">{product.sku}</span>
-                </div>
-                <p className="text-sm font-semibold leading-tight mb-1">{product.name}</p>
-                <p className="text-xs text-muted-foreground mb-2">{product.unit}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-primary font-mono">${product.price.toFixed(2)}</span>
-                  <span className="text-[10px] text-muted-foreground">{product.stock} in stock</span>
-                </div>
-              </button>
-            ))}
-          </div>
+          {productsLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 rounded-xl" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5">
+              {filteredProducts.map((product) => (
+                <button
+                  key={product.id}
+                  onClick={() => addToCart(product)}
+                  className="glass-card rounded-xl p-3.5 text-left hover:ring-2 hover:ring-primary/30 transition-all active:scale-[0.98]"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <Badge variant="secondary" className="text-[10px]">{product.product_categories?.name ?? "Other"}</Badge>
+                    <span className="text-[10px] text-muted-foreground font-mono">{product.sku}</span>
+                  </div>
+                  <p className="text-sm font-semibold leading-tight mb-1">{product.name}</p>
+                  <p className="text-xs text-muted-foreground mb-2">{product.unit}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold text-primary font-mono">${Number(product.price).toFixed(2)}</span>
+                    <span className="text-[10px] text-muted-foreground">{product.stock_quantity} in stock</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -116,7 +176,6 @@ export default function POSTerminal() {
           )}
         </div>
 
-        {/* Cart Items */}
         <div className="flex-1 overflow-auto p-3 space-y-2">
           {cart.length === 0 ? (
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
@@ -147,7 +206,6 @@ export default function POSTerminal() {
           )}
         </div>
 
-        {/* Totals + Payment */}
         <div className="border-t p-4 space-y-3">
           <div className="space-y-1.5">
             <div className="flex justify-between text-sm">
@@ -166,15 +224,15 @@ export default function POSTerminal() {
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <Button onClick={() => handleCheckout("Card")} disabled={cart.length === 0} className="flex-col h-14 gap-1">
+            <Button onClick={() => handleCheckout("card")} disabled={cart.length === 0 || checkout.isPending} className="flex-col h-14 gap-1">
               <CreditCard className="h-4 w-4" />
               <span className="text-[10px]">Card</span>
             </Button>
-            <Button onClick={() => handleCheckout("Cash")} disabled={cart.length === 0} variant="secondary" className="flex-col h-14 gap-1">
+            <Button onClick={() => handleCheckout("cash")} disabled={cart.length === 0 || checkout.isPending} variant="secondary" className="flex-col h-14 gap-1">
               <Banknote className="h-4 w-4" />
               <span className="text-[10px]">Cash</span>
             </Button>
-            <Button onClick={() => handleCheckout("Mobile")} disabled={cart.length === 0} variant="secondary" className="flex-col h-14 gap-1">
+            <Button onClick={() => handleCheckout("mobile")} disabled={cart.length === 0 || checkout.isPending} variant="secondary" className="flex-col h-14 gap-1">
               <Smartphone className="h-4 w-4" />
               <span className="text-[10px]">Mobile</span>
             </Button>

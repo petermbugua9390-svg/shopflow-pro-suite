@@ -1,11 +1,15 @@
-import { mockSales } from "@/data/mockData";
+import { useSalesHistory } from "@/hooks/useSales";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Download, Filter } from "lucide-react";
+import { format } from "date-fns";
 
 export default function SalesHistory() {
+  const { data: sales, isLoading } = useSalesHistory();
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -21,43 +25,60 @@ export default function SalesHistory() {
 
       <Card className="glass-card border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">All Transactions</CardTitle>
+          <CardTitle className="text-sm font-semibold">All Transactions ({sales?.length ?? 0})</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Transaction ID</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Cashier</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockSales.map((sale) => (
-                <TableRow key={sale.id} className="hover:bg-muted/30">
-                  <TableCell className="font-mono text-sm font-medium">{sale.id}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{sale.date}</TableCell>
-                  <TableCell className="font-mono">{sale.items}</TableCell>
-                  <TableCell className="font-mono font-semibold">${sale.total.toFixed(2)}</TableCell>
-                  <TableCell><Badge variant="secondary" className="text-[10px]">{sale.paymentMethod}</Badge></TableCell>
-                  <TableCell className="text-sm">{sale.cashier}</TableCell>
-                  <TableCell>
-                    <Badge className={`text-[10px] ${
-                      sale.status === "completed" ? "bg-success text-success-foreground" :
-                      sale.status === "refunded" ? "bg-destructive text-destructive-foreground" :
-                      "bg-warning text-warning-foreground"
-                    }`}>
-                      {sale.status}
-                    </Badge>
-                  </TableCell>
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sale #</TableHead>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {sales?.map((sale) => (
+                  <TableRow key={sale.id} className="hover:bg-muted/30">
+                    <TableCell className="font-mono text-sm font-medium">{sale.sale_number ?? sale.id.slice(0, 8)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {format(new Date(sale.created_at), "yyyy-MM-dd HH:mm")}
+                    </TableCell>
+                    <TableCell className="font-mono">{sale.sale_items?.length ?? 0}</TableCell>
+                    <TableCell className="font-mono font-semibold">${Number(sale.total).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {sale.sale_payments?.[0]?.payment_method ?? "—"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`text-[10px] ${
+                        sale.status === "completed" ? "bg-success text-success-foreground" :
+                        sale.status === "refunded" ? "bg-destructive text-destructive-foreground" :
+                        "bg-warning text-warning-foreground"
+                      }`}>
+                        {sale.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {sales?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No sales recorded yet. Process your first sale from the POS Terminal.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
