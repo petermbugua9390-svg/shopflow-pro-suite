@@ -9,7 +9,9 @@ import {
   Receipt,
   BarChart3,
   Store,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -75,6 +77,11 @@ function NavGroup({ label, items, collapsed }: { label: string; items: typeof ma
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const { user, signOut } = useAuth();
+
+  const initials = user?.user_metadata?.full_name
+    ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+    : user?.email?.slice(0, 2).toUpperCase() ?? "??";
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -99,17 +106,22 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        {!collapsed && (
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-xs font-semibold text-primary">SK</span>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-sidebar-accent-foreground">Sarah Kim</p>
-              <p className="text-[10px] text-sidebar-foreground/50">Store Manager</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+            <span className="text-xs font-semibold text-primary">{initials}</span>
           </div>
-        )}
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-sidebar-accent-foreground truncate">
+                {user?.user_metadata?.full_name ?? user?.email}
+              </p>
+              <button onClick={signOut} className="flex items-center gap-1 text-[10px] text-sidebar-foreground/50 hover:text-destructive transition-colors">
+                <LogOut className="h-3 w-3" />
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
