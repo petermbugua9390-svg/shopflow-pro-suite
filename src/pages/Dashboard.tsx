@@ -157,21 +157,23 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Recent Transactions */}
           <Card className="glass-card border-border/50">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">Recent Transactions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2.5">
-              {mockSales.slice(0, 4).map((sale) => (
+              {(recentSales ?? []).slice(0, 4).map((sale) => (
                 <div key={sale.id} className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium font-mono">{sale.id}</p>
-                    <p className="text-[10px] text-muted-foreground">{sale.date}</p>
+                    <p className="text-sm font-medium font-mono">{sale.sale_number ?? sale.id.slice(0, 8)}</p>
+                    <p className="text-[10px] text-muted-foreground">{format(new Date(sale.created_at), "HH:mm")}</p>
                   </div>
-                  <span className="text-sm font-semibold font-mono">${sale.total.toFixed(2)}</span>
+                  <span className="text-sm font-semibold font-mono">${Number(sale.total).toFixed(2)}</span>
                 </div>
               ))}
+              {(!recentSales || recentSales.length === 0) && (
+                <p className="text-sm text-muted-foreground text-center py-4">No sales yet</p>
+              )}
             </CardContent>
           </Card>
         </div>
