@@ -9,41 +9,42 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { format } from "date-fns";
 
 export default function Dashboard() {
+  const { data: stats } = useDashboardStats();
+  const { data: recentSales } = useSalesHistory();
+
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Welcome back, Sarah. Here's what's happening today.</p>
+        <p className="text-sm text-muted-foreground">Welcome back. Here's what's happening today.</p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Today's Revenue"
-          value="$19,260"
-          change="+12.5% vs yesterday"
+          value={`$${(stats?.totalRevenue ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          change="Live from database"
           changeType="positive"
           icon={DollarSign}
         />
         <StatCard
           title="Transactions"
-          value="438"
-          change="+8.2% vs yesterday"
+          value={String(stats?.transactionCount ?? 0)}
+          change="Today's count"
           changeType="positive"
           icon={ShoppingCart}
         />
         <StatCard
           title="Avg. Order Value"
-          value="$43.97"
-          change="-2.1% vs yesterday"
-          changeType="negative"
+          value={`$${(stats?.avgOrder ?? 0).toFixed(2)}`}
+          change="Per transaction"
+          changeType="positive"
           icon={TrendingUp}
         />
         <StatCard
           title="Active Customers"
-          value="1,247"
-          change="+156 this week"
+          value={String(stats?.customerCount ?? 0)}
+          change="In database"
           changeType="positive"
           icon={Users}
         />
