@@ -2,8 +2,11 @@ import { StatCard } from "@/components/StatCard";
 import { DollarSign, ShoppingCart, TrendingUp, Package, AlertTriangle, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { dailySalesData, weeklySalesData, topProducts, lowStockProducts, mockSales } from "@/data/mockData";
+import { dailySalesData, weeklySalesData, topProducts, lowStockProducts } from "@/data/mockData";
+import { useDashboardStats } from "@/hooks/useSales";
+import { useSalesHistory } from "@/hooks/useSales";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { format } from "date-fns";
 
 export default function Dashboard() {
   return (
