@@ -14,7 +14,7 @@ interface CheckoutPayload {
   subtotal: number;
   tax_amount: number;
   total: number;
-  payment_method: "cash" | "card" | "mobile_money" | "bank_transfer";
+  payment_method: "cash" | "card" | "mobile" | "credit" | "gift_card" | "split";
 }
 
 export function useSalesHistory() {
