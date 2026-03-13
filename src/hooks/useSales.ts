@@ -73,16 +73,6 @@ export function useCheckout() {
       });
       if (payError) throw payError;
 
-      // Decrement stock for each product
-      for (const item of payload.items) {
-        const { error: stockError } = await supabase.rpc("has_role" as any, {} as any);
-        // Use direct update instead
-        await supabase
-          .from("products")
-          .update({ stock_quantity: supabase.rpc as any })
-          .eq("id", item.product_id);
-      }
-
       return sale;
     },
     onSuccess: () => {
