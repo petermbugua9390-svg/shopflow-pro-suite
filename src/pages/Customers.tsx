@@ -1,11 +1,16 @@
 import { useState, useMemo } from "react";
-import { mockCustomers } from "@/data/mockData";
+import { useCustomers, useCreateCustomer, useDeleteCustomer, type Customer } from "@/hooks/useCustomers";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Crown, Heart, Search, Plus, Download, Star } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Users, Crown, Heart, Search, Plus, Download, Star, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 const tierColors: Record<string, string> = {
   Platinum: "bg-primary text-primary-foreground",
@@ -15,18 +20,45 @@ const tierColors: Record<string, string> = {
 };
 
 export default function Customers() {
+  const { data: customers, isLoading } = useCustomers();
+  const createCustomer = useCreateCustomer();
+  const deleteCustomer = useDeleteCustomer();
   const [search, setSearch] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", phone: "" });
+
+  const items = customers || [];
 
   const filtered = useMemo(() =>
-    mockCustomers.filter((c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase())
-    ), [search]
+    items.filter((c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.email || "").toLowerCase().includes(search.toLowerCase())
+    ), [items, search]
   );
 
-  const totalCustomers = mockCustomers.length;
-  const totalLoyalty = mockCustomers.reduce((s, c) => s + c.loyaltyPoints, 0);
-  const avgSpend = mockCustomers.reduce((s, c) => s + c.totalSpent, 0) / totalCustomers;
-  const platinum = mockCustomers.filter((c) => c.tier === "Platinum").length;
+  const totalCustomers = items.length;
+  const totalLoyalty = items.reduce((s, c) => s + (c.loyalty_points ?? 0), 0);
+  const avgSpend = totalCustomers > 0 ? items.reduce((s, c) => s + Number(c.total_spent ?? 0), 0) / totalCustomers : 0;
+  const platinum = items.filter((c) => c.tier === "Platinum").length;
+
+  const handleAdd = () => {
+    if (!form.name.trim()) { toast.error("Name is required"); return; }
+    createCustomer.mutate({ name: form.name, email: form.email || null, phone: form.phone || null }, {
+      onSuccess: () => { setAddOpen(false); setForm({ name: "", email: "", phone: "" }); }
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -37,22 +69,21 @@ export default function Customers() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1.5" />Export</Button>
-          <Button size="sm"><Plus className="h-4 w-4 mr-1.5" />Add Customer</Button>
+          <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1.5" />Add Customer</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Customers" value={totalCustomers.toLocaleString()} change="+12 this month" changeType="positive" icon={Users} />
-        <StatCard title="Avg Lifetime Value" value={`$${avgSpend.toFixed(0)}`} change="+8.4% growth" changeType="positive" icon={Heart} />
+        <StatCard title="Total Customers" value={totalCustomers.toLocaleString()} icon={Users} subtitle="Active customers" />
+        <StatCard title="Avg Lifetime Value" value={`$${avgSpend.toFixed(0)}`} icon={Heart} subtitle="Per customer" />
         <StatCard title="Loyalty Points Active" value={totalLoyalty.toLocaleString()} icon={Star} subtitle="Across all tiers" />
         <StatCard title="VIP Members" value={platinum.toString()} subtitle="Platinum tier" icon={Crown} />
       </div>
 
-      {/* Tier Breakdown */}
       <div className="grid grid-cols-4 gap-3">
         {(["Platinum", "Gold", "Silver", "Bronze"] as const).map((tier) => {
-          const count = mockCustomers.filter((c) => c.tier === tier).length;
-          const pct = ((count / totalCustomers) * 100).toFixed(0);
+          const count = items.filter((c) => c.tier === tier).length;
+          const pct = totalCustomers > 0 ? ((count / totalCustomers) * 100).toFixed(0) : "0";
           return (
             <Card key={tier} className="glass-card border-border/50 p-4">
               <div className="flex items-center justify-between mb-2">
@@ -66,7 +97,6 @@ export default function Customers() {
         })}
       </div>
 
-      {/* Customer Table */}
       <Card className="glass-card border-border/50">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -87,7 +117,7 @@ export default function Customers() {
                 <TableHead>Visits</TableHead>
                 <TableHead>Points</TableHead>
                 <TableHead>Credit Balance</TableHead>
-                <TableHead>Last Visit</TableHead>
+                <TableHead className="w-16">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -96,21 +126,40 @@ export default function Customers() {
                   <TableCell>
                     <div>
                       <p className="font-medium text-sm">{c.name}</p>
-                      <p className="text-xs text-muted-foreground">{c.email}</p>
+                      <p className="text-xs text-muted-foreground">{c.email || "No email"}</p>
                     </div>
                   </TableCell>
-                  <TableCell><Badge className={`${tierColors[c.tier]} text-[10px]`}>{c.tier}</Badge></TableCell>
-                  <TableCell className="font-mono font-semibold">${c.totalSpent.toLocaleString()}</TableCell>
-                  <TableCell className="font-mono">{c.visits}</TableCell>
-                  <TableCell className="font-mono text-primary">{c.loyaltyPoints.toLocaleString()}</TableCell>
-                  <TableCell className="font-mono">{c.creditBalance > 0 ? `$${c.creditBalance.toFixed(2)}` : "—"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{c.lastVisit}</TableCell>
+                  <TableCell><Badge className={`${tierColors[c.tier || "Bronze"]} text-[10px]`}>{c.tier || "Bronze"}</Badge></TableCell>
+                  <TableCell className="font-mono font-semibold">${Number(c.total_spent ?? 0).toLocaleString()}</TableCell>
+                  <TableCell className="font-mono">{c.visits ?? 0}</TableCell>
+                  <TableCell className="font-mono text-primary">{(c.loyalty_points ?? 0).toLocaleString()}</TableCell>
+                  <TableCell className="font-mono">{Number(c.credit_balance ?? 0) > 0 ? `$${Number(c.credit_balance).toFixed(2)}` : "—"}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteCustomer.mutate(c.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
+              {filtered.length === 0 && (
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No customers found</TableCell></TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Add Customer</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+            <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+            <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+            <Button onClick={handleAdd} disabled={createCustomer.isPending} className="w-full">Add Customer</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
