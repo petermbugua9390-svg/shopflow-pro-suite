@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { useProducts, useProductCategories } from "@/hooks/useProducts";
 import { useCheckout } from "@/hooks/useSales";
-import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone } from "lucide-react";
+import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone, Gift, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReceiptDialog } from "@/components/ReceiptDialog";
 import { toast } from "sonner";
 
 interface CartItem {
@@ -17,20 +18,33 @@ interface CartItem {
   unit: string | null;
   category_name: string | null;
   stock_quantity: number;
+  tax_rate: number;
+  is_taxable: boolean;
+}
+
+interface ReceiptData {
+  sale_id: string;
+  items: { name: string; quantity: number; unit_price: number; total: number }[];
+  subtotal: number;
+  tax_amount: number;
+  total: number;
+  payment_method: string;
+  date: Date;
 }
 
 export default function POSTerminal() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
   const { data: products, isLoading: productsLoading } = useProducts();
   const { data: categories } = useProductCategories();
   const checkout = useCheckout();
 
   const categoryNames = useMemo(() => {
-    const names = ["All", ...(categories?.map((c) => c.name) ?? [])];
-    return names;
+    return ["All", ...(categories?.map((c) => c.name) ?? [])];
   }, [categories]);
 
   const filteredProducts = useMemo(() => {
@@ -50,7 +64,17 @@ export default function POSTerminal() {
   const addToCart = (product: NonNullable<typeof products>[0]) => {
     setCart((prev) => {
       const existing = prev.find((i) => i.id === product.id);
-      if (existing) return prev.map((i) => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      if (existing) {
+        if (existing.quantity >= product.stock_quantity) {
+          toast.error(`Only ${product.stock_quantity} in stock`);
+          return prev;
+        }
+        return prev.map((i) => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      if (product.stock_quantity <= 0) {
+        toast.error("Out of stock");
+        return prev;
+      }
       return [...prev, {
         id: product.id,
         name: product.name,
@@ -60,22 +84,35 @@ export default function POSTerminal() {
         unit: product.unit,
         category_name: product.product_categories?.name ?? null,
         stock_quantity: product.stock_quantity,
+        tax_rate: Number(product.tax_rate ?? 0),
+        is_taxable: product.is_taxable ?? true,
       }];
     });
   };
 
   const updateQuantity = (id: string, delta: number) => {
-    setCart((prev) => prev.map((i) => i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i).filter((i) => i.quantity > 0));
+    setCart((prev) => prev.map((i) => {
+      if (i.id !== id) return i;
+      const newQty = i.quantity + delta;
+      if (newQty > i.stock_quantity) {
+        toast.error(`Only ${i.stock_quantity} in stock`);
+        return i;
+      }
+      return { ...i, quantity: Math.max(0, newQty) };
+    }).filter((i) => i.quantity > 0));
   };
 
   const removeItem = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
   const clearCart = () => setCart([]);
 
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const tax = subtotal * 0.08;
+  const tax = cart.reduce((sum, i) => {
+    if (!i.is_taxable) return sum;
+    return sum + (i.price * i.quantity * i.tax_rate / 100);
+  }, 0);
   const total = subtotal + tax;
 
-  const handleCheckout = (method: "card" | "cash" | "mobile") => {
+  const handleCheckout = (method: "card" | "cash" | "mobile" | "gift_card") => {
     if (cart.length === 0) return;
     checkout.mutate(
       {
@@ -91,9 +128,19 @@ export default function POSTerminal() {
         payment_method: method,
       },
       {
-        onSuccess: () => {
-          toast.success(`Payment of $${total.toFixed(2)} processed via ${method}`);
+        onSuccess: (sale) => {
+          setReceiptData({
+            sale_id: sale.id,
+            items: cart.map((i) => ({ name: i.name, quantity: i.quantity, unit_price: i.price, total: i.price * i.quantity })),
+            subtotal,
+            tax_amount: tax,
+            total,
+            payment_method: method,
+            date: new Date(),
+          });
+          setReceiptOpen(true);
           setCart([]);
+          toast.success(`Payment of $${total.toFixed(2)} processed via ${method}`);
         },
       }
     );
@@ -141,24 +188,32 @@ export default function POSTerminal() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5">
-              {filteredProducts.map((product) => (
-                <button
-                  key={product.id}
-                  onClick={() => addToCart(product)}
-                  className="glass-card rounded-xl p-3.5 text-left hover:ring-2 hover:ring-primary/30 transition-all active:scale-[0.98]"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <Badge variant="secondary" className="text-[10px]">{product.product_categories?.name ?? "Other"}</Badge>
-                    <span className="text-[10px] text-muted-foreground font-mono">{product.sku}</span>
-                  </div>
-                  <p className="text-sm font-semibold leading-tight mb-1">{product.name}</p>
-                  <p className="text-xs text-muted-foreground mb-2">{product.unit}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-primary font-mono">${Number(product.price).toFixed(2)}</span>
-                    <span className="text-[10px] text-muted-foreground">{product.stock_quantity} in stock</span>
-                  </div>
-                </button>
-              ))}
+              {filteredProducts.map((product) => {
+                const outOfStock = product.stock_quantity <= 0;
+                const lowStock = product.stock_quantity > 0 && product.stock_quantity <= (product.reorder_level ?? 10);
+                return (
+                  <button
+                    key={product.id}
+                    onClick={() => addToCart(product)}
+                    disabled={outOfStock}
+                    className={`glass-card rounded-xl p-3.5 text-left transition-all active:scale-[0.98] ${
+                      outOfStock ? "opacity-50 cursor-not-allowed" : "hover:ring-2 hover:ring-primary/30"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <Badge variant="secondary" className="text-[10px]">{product.product_categories?.name ?? "Other"}</Badge>
+                      {outOfStock && <Badge variant="destructive" className="text-[10px]">Out of Stock</Badge>}
+                      {lowStock && <Badge className="text-[10px] bg-warning text-warning-foreground">Low</Badge>}
+                    </div>
+                    <p className="text-sm font-semibold leading-tight mb-1">{product.name}</p>
+                    <p className="text-xs text-muted-foreground mb-2">{product.unit}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-primary font-mono">${Number(product.price).toFixed(2)}</span>
+                      <span className="text-[10px] text-muted-foreground">{product.stock_quantity} in stock</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -186,7 +241,12 @@ export default function POSTerminal() {
               <div key={item.id} className="flex items-center gap-3 bg-muted/30 rounded-lg p-2.5">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{item.name}</p>
-                  <p className="text-xs text-muted-foreground font-mono">${item.price.toFixed(2)} × {item.quantity}</p>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    ${item.price.toFixed(2)} × {item.quantity}
+                    {item.is_taxable && item.tax_rate > 0 && (
+                      <span className="ml-1 text-[10px]">+{item.tax_rate}% tax</span>
+                    )}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => updateQuantity(item.id, -1)} className="h-6 w-6 rounded-md bg-muted flex items-center justify-center hover:bg-muted/80">
@@ -213,7 +273,7 @@ export default function POSTerminal() {
               <span className="font-mono">${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Tax (8%)</span>
+              <span className="text-muted-foreground">Tax</span>
               <span className="font-mono">${tax.toFixed(2)}</span>
             </div>
             <Separator />
@@ -223,7 +283,7 @@ export default function POSTerminal() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button onClick={() => handleCheckout("card")} disabled={cart.length === 0 || checkout.isPending} className="flex-col h-14 gap-1">
               <CreditCard className="h-4 w-4" />
               <span className="text-[10px]">Card</span>
@@ -236,9 +296,15 @@ export default function POSTerminal() {
               <Smartphone className="h-4 w-4" />
               <span className="text-[10px]">Mobile</span>
             </Button>
+            <Button onClick={() => handleCheckout("gift_card")} disabled={cart.length === 0 || checkout.isPending} variant="outline" className="flex-col h-14 gap-1">
+              <Gift className="h-4 w-4" />
+              <span className="text-[10px]">Gift Card</span>
+            </Button>
           </div>
         </div>
       </div>
+
+      <ReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} receipt={receiptData} />
     </div>
   );
 }
