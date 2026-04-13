@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Users, Crown, Heart, Search, Plus, Download, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatKSh } from "@/lib/currency";
+import { exportCsv } from "@/lib/exportCsv";
 
 const tierColors: Record<string, string> = {
   Platinum: "bg-primary text-primary-foreground",
@@ -48,6 +50,22 @@ export default function Customers() {
     });
   };
 
+  const handleExport = () => {
+    exportCsv(
+      filtered.map((c) => ({
+        Name: c.name,
+        Email: c.email || "",
+        Phone: c.phone || "",
+        Tier: c.tier || "Bronze",
+        "Total Spent": Number(c.total_spent ?? 0),
+        Visits: c.visits ?? 0,
+        "Loyalty Points": c.loyalty_points ?? 0,
+        "Credit Balance": Number(c.credit_balance ?? 0),
+      })),
+      `customers_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -68,14 +86,14 @@ export default function Customers() {
           <p className="text-sm text-muted-foreground">Manage customer profiles, loyalty, and CRM</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1.5" />Export</Button>
+          <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1.5" />Export</Button>
           <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1.5" />Add Customer</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Customers" value={totalCustomers.toLocaleString()} icon={Users} subtitle="Active customers" />
-        <StatCard title="Avg Lifetime Value" value={`$${avgSpend.toFixed(0)}`} icon={Heart} subtitle="Per customer" />
+        <StatCard title="Avg Lifetime Value" value={formatKSh(avgSpend)} icon={Heart} subtitle="Per customer" />
         <StatCard title="Loyalty Points Active" value={totalLoyalty.toLocaleString()} icon={Star} subtitle="Across all tiers" />
         <StatCard title="VIP Members" value={platinum.toString()} subtitle="Platinum tier" icon={Crown} />
       </div>
@@ -130,10 +148,10 @@ export default function Customers() {
                     </div>
                   </TableCell>
                   <TableCell><Badge className={`${tierColors[c.tier || "Bronze"]} text-[10px]`}>{c.tier || "Bronze"}</Badge></TableCell>
-                  <TableCell className="font-mono font-semibold">${Number(c.total_spent ?? 0).toLocaleString()}</TableCell>
+                  <TableCell className="font-mono font-semibold">{formatKSh(Number(c.total_spent ?? 0))}</TableCell>
                   <TableCell className="font-mono">{c.visits ?? 0}</TableCell>
                   <TableCell className="font-mono text-primary">{(c.loyalty_points ?? 0).toLocaleString()}</TableCell>
-                  <TableCell className="font-mono">{Number(c.credit_balance ?? 0) > 0 ? `$${Number(c.credit_balance).toFixed(2)}` : "—"}</TableCell>
+                  <TableCell className="font-mono">{Number(c.credit_balance ?? 0) > 0 ? formatKSh(Number(c.credit_balance)) : "—"}</TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteCustomer.mutate(c.id)}>
                       <Trash2 className="h-3.5 w-3.5" />

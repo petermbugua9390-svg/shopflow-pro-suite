@@ -10,6 +10,8 @@ import { StatCard } from "@/components/StatCard";
 import { Package, AlertTriangle, DollarSign, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { formatKSh } from "@/lib/currency";
+import { exportCsv } from "@/lib/exportCsv";
 
 export default function Inventory() {
   const { data: products, isLoading } = useProducts();
@@ -63,6 +65,22 @@ export default function Inventory() {
     }
   };
 
+  const handleExport = () => {
+    exportCsv(
+      filtered.map((p) => ({
+        Name: p.name,
+        SKU: p.sku || "",
+        Category: p.product_categories?.name || "",
+        Price: p.price,
+        "Cost Price": p.cost_price || 0,
+        Stock: p.stock_quantity,
+        "Reorder Level": p.reorder_level || 10,
+        Status: p.stock_quantity < (p.reorder_level || 10) ? "Low" : "Good",
+      })),
+      `inventory_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -83,14 +101,14 @@ export default function Inventory() {
           <p className="text-sm text-muted-foreground">Manage products and stock levels</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1.5" />Export</Button>
+          <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1.5" />Export</Button>
           <Button size="sm" onClick={handleAdd}><Plus className="h-4 w-4 mr-1.5" />Add Product</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Products" value={totalSKUs.toString()} icon={Package} subtitle="Active SKUs" />
-        <StatCard title="Inventory Value" value={`$${(totalValue / 1000).toFixed(1)}k`} icon={DollarSign} change="+3.2% this month" changeType="positive" />
+        <StatCard title="Inventory Value" value={formatKSh(totalValue, true)} icon={DollarSign} change="+3.2% this month" changeType="positive" />
         <StatCard title="Low Stock Items" value={lowStock.toString()} icon={AlertTriangle} change="Needs attention" changeType="negative" />
         <StatCard title="Categories" value={categoryCount.toString()} icon={BarChart3} subtitle="Product categories" />
       </div>
@@ -141,8 +159,8 @@ export default function Inventory() {
                       {product.product_categories?.name || "—"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-mono">${product.price.toFixed(2)}</TableCell>
-                  <TableCell className="font-mono text-muted-foreground">${(product.cost_price || 0).toFixed(2)}</TableCell>
+                  <TableCell className="font-mono">{formatKSh(product.price)}</TableCell>
+                  <TableCell className="font-mono text-muted-foreground">{formatKSh(product.cost_price || 0)}</TableCell>
                   <TableCell className="font-mono">{product.stock_quantity}</TableCell>
                   <TableCell>
                     {product.stock_quantity < (product.reorder_level || 10) ? (

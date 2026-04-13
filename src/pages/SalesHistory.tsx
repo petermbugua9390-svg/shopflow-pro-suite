@@ -6,9 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Download, Filter } from "lucide-react";
 import { format } from "date-fns";
+import { formatKSh } from "@/lib/currency";
+import { exportCsv } from "@/lib/exportCsv";
 
 export default function SalesHistory() {
   const { data: sales, isLoading } = useSalesHistory();
+
+  const handleExport = () => {
+    if (!sales?.length) return;
+    exportCsv(
+      sales.map((s) => ({
+        "Sale #": s.sale_number ?? s.id.slice(0, 8),
+        Date: format(new Date(s.created_at), "yyyy-MM-dd HH:mm"),
+        Items: s.sale_items?.length ?? 0,
+        Total: Number(s.total),
+        Payment: s.sale_payments?.[0]?.payment_method ?? "—",
+        Status: s.status,
+      })),
+      `sales_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -19,7 +36,7 @@ export default function SalesHistory() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm"><Filter className="h-4 w-4 mr-1.5" />Filter</Button>
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1.5" />Export</Button>
+          <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1.5" />Export</Button>
         </div>
       </div>
 
@@ -52,7 +69,7 @@ export default function SalesHistory() {
                       {format(new Date(sale.created_at), "yyyy-MM-dd HH:mm")}
                     </TableCell>
                     <TableCell className="font-mono">{sale.sale_items?.length ?? 0}</TableCell>
-                    <TableCell className="font-mono font-semibold">${Number(sale.total).toFixed(2)}</TableCell>
+                    <TableCell className="font-mono font-semibold">{formatKSh(Number(sale.total))}</TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="text-[10px]">
                         {sale.sale_payments?.[0]?.payment_method ?? "—"}

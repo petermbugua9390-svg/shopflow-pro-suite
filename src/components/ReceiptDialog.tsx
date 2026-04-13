@@ -1,8 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Printer, Mail, X } from "lucide-react";
+import { Printer, X } from "lucide-react";
 import { format } from "date-fns";
+import { formatKSh } from "@/lib/currency";
 
 interface ReceiptItem {
   name: string;
@@ -30,6 +31,8 @@ interface ReceiptDialogProps {
 export function ReceiptDialog({ open, onOpenChange, receipt }: ReceiptDialogProps) {
   if (!receipt) return null;
 
+  const fmtKSh = (v: number) => `KSh ${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   const handlePrint = () => {
     const printWindow = window.open("", "_blank", "width=300,height=600");
     if (!printWindow) return;
@@ -48,12 +51,12 @@ export function ReceiptDialog({ open, onOpenChange, receipt }: ReceiptDialogProp
       <div class="center" style="font-size:10px">${format(receipt.date, "PPpp")}</div>
       <div class="center" style="font-size:10px">Receipt #${receipt.sale_id.slice(0, 8).toUpperCase()}</div>
       <div class="line"></div>
-      ${receipt.items.map(i => `<div class="row"><span>${i.quantity}x ${i.name}</span><span>$${i.total.toFixed(2)}</span></div>`).join("")}
+      ${receipt.items.map(i => `<div class="row"><span>${i.quantity}x ${i.name}</span><span>${fmtKSh(i.total)}</span></div>`).join("")}
       <div class="line"></div>
-      <div class="row"><span>Subtotal</span><span>$${receipt.subtotal.toFixed(2)}</span></div>
-      <div class="row"><span>Tax</span><span>$${receipt.tax_amount.toFixed(2)}</span></div>
+      <div class="row"><span>Subtotal</span><span>${fmtKSh(receipt.subtotal)}</span></div>
+      <div class="row"><span>Tax</span><span>${fmtKSh(receipt.tax_amount)}</span></div>
       <div class="line"></div>
-      <div class="row total-row"><span>TOTAL</span><span>$${receipt.total.toFixed(2)}</span></div>
+      <div class="row total-row"><span>TOTAL</span><span>${fmtKSh(receipt.total)}</span></div>
       <div class="line"></div>
       <div class="row"><span>Payment</span><span>${receipt.payment_method.toUpperCase()}</span></div>
       <div class="line"></div>
@@ -80,16 +83,16 @@ export function ReceiptDialog({ open, onOpenChange, receipt }: ReceiptDialogProp
           {receipt.items.map((item, i) => (
             <div key={i} className="flex justify-between">
               <span>{item.quantity}x {item.name}</span>
-              <span>${item.total.toFixed(2)}</span>
+              <span>{formatKSh(item.total)}</span>
             </div>
           ))}
           <Separator />
-          <div className="flex justify-between"><span>Subtotal</span><span>${receipt.subtotal.toFixed(2)}</span></div>
-          <div className="flex justify-between"><span>Tax</span><span>${receipt.tax_amount.toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Subtotal</span><span>{formatKSh(receipt.subtotal)}</span></div>
+          <div className="flex justify-between"><span>Tax</span><span>{formatKSh(receipt.tax_amount)}</span></div>
           <Separator />
           <div className="flex justify-between text-sm font-bold">
             <span>TOTAL</span>
-            <span>${receipt.total.toFixed(2)}</span>
+            <span>{formatKSh(receipt.total)}</span>
           </div>
           <Separator />
           <div className="flex justify-between">
