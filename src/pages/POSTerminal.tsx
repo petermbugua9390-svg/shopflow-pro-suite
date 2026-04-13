@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReceiptDialog } from "@/components/ReceiptDialog";
 import { toast } from "sonner";
+import { formatKSh } from "@/lib/currency";
 
 interface CartItem {
   id: string;
@@ -140,7 +141,7 @@ export default function POSTerminal() {
           });
           setReceiptOpen(true);
           setCart([]);
-          toast.success(`Payment of $${total.toFixed(2)} processed via ${method}`);
+          toast.success(`Payment of ${formatKSh(total)} processed via ${method}`);
         },
       }
     );
@@ -208,7 +209,7 @@ export default function POSTerminal() {
                     <p className="text-sm font-semibold leading-tight mb-1">{product.name}</p>
                     <p className="text-xs text-muted-foreground mb-2">{product.unit}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-primary font-mono">${Number(product.price).toFixed(2)}</span>
+                      <span className="text-lg font-bold text-primary font-mono">{formatKSh(Number(product.price))}</span>
                       <span className="text-[10px] text-muted-foreground">{product.stock_quantity} in stock</span>
                     </div>
                   </button>
@@ -242,7 +243,7 @@ export default function POSTerminal() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{item.name}</p>
                   <p className="text-xs text-muted-foreground font-mono">
-                    ${item.price.toFixed(2)} × {item.quantity}
+                    {formatKSh(item.price)} × {item.quantity}
                     {item.is_taxable && item.tax_rate > 0 && (
                       <span className="ml-1 text-[10px]">+{item.tax_rate}% tax</span>
                     )}
@@ -260,7 +261,7 @@ export default function POSTerminal() {
                     <Trash2 className="h-3 w-3" />
                   </button>
                 </div>
-                <span className="text-sm font-bold font-mono w-16 text-right">${(item.price * item.quantity).toFixed(2)}</span>
+                <span className="text-sm font-bold font-mono w-20 text-right">{formatKSh(item.price * item.quantity)}</span>
               </div>
             ))
           )}
@@ -270,16 +271,16 @@ export default function POSTerminal() {
           <div className="space-y-1.5">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
-              <span className="font-mono">${subtotal.toFixed(2)}</span>
+              <span className="font-mono">{formatKSh(subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Tax</span>
-              <span className="font-mono">${tax.toFixed(2)}</span>
+              <span className="font-mono">{formatKSh(tax)}</span>
             </div>
             <Separator />
             <div className="flex justify-between text-lg font-bold">
               <span>Total</span>
-              <span className="font-mono text-primary">${total.toFixed(2)}</span>
+              <span className="font-mono text-primary">{formatKSh(total)}</span>
             </div>
           </div>
 
@@ -294,7 +295,7 @@ export default function POSTerminal() {
             </Button>
             <Button onClick={() => handleCheckout("mobile")} disabled={cart.length === 0 || checkout.isPending} variant="secondary" className="flex-col h-14 gap-1">
               <Smartphone className="h-4 w-4" />
-              <span className="text-[10px]">Mobile</span>
+              <span className="text-[10px]">M-Pesa</span>
             </Button>
             <Button onClick={() => handleCheckout("gift_card")} disabled={cart.length === 0 || checkout.isPending} variant="outline" className="flex-col h-14 gap-1">
               <Gift className="h-4 w-4" />

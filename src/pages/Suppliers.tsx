@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Truck, DollarSign, Star, Search, Plus, Download, ClipboardList } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { formatKSh } from "@/lib/currency";
+import { exportCsv } from "@/lib/exportCsv";
 
 const statusColors: Record<string, string> = {
   active: "bg-success text-success-foreground",
@@ -58,6 +60,23 @@ export default function Suppliers() {
     });
   };
 
+  const handleExport = () => {
+    exportCsv(
+      filteredSuppliers.map((s) => ({
+        Company: s.company,
+        Category: s.category || "",
+        Contact: s.contact_name || "",
+        Email: s.email || "",
+        Phone: s.phone || "",
+        Rating: Number(s.rating ?? 0),
+        "Total Orders": s.total_orders ?? 0,
+        "Outstanding Balance": Number(s.outstanding_balance ?? 0),
+        Status: s.status || "active",
+      })),
+      `suppliers_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -78,14 +97,14 @@ export default function Suppliers() {
           <p className="text-sm text-muted-foreground">Manage suppliers, purchase orders, and deliveries</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1.5" />Export</Button>
+          <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1.5" />Export</Button>
           <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1.5" />Add Supplier</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Active Suppliers" value={items.filter((s) => s.status === "active").length.toString()} icon={Truck} subtitle={`${items.length} total`} />
-        <StatCard title="Outstanding Payables" value={`$${(totalOutstanding / 1000).toFixed(1)}k`} icon={DollarSign} subtitle="Total owed" />
+        <StatCard title="Outstanding Payables" value={formatKSh(totalOutstanding, true)} icon={DollarSign} subtitle="Total owed" />
         <StatCard title="Avg Supplier Rating" value={avgRating} icon={Star} subtitle="Out of 5.0" />
         <StatCard title="Open POs" value={openPOs.toString()} icon={ClipboardList} subtitle="Pending delivery" />
       </div>
@@ -138,7 +157,7 @@ export default function Suppliers() {
                         </div>
                       </TableCell>
                       <TableCell className="font-mono">{s.total_orders ?? 0}</TableCell>
-                      <TableCell className="font-mono font-semibold">${Number(s.outstanding_balance ?? 0).toLocaleString()}</TableCell>
+                      <TableCell className="font-mono font-semibold">{formatKSh(Number(s.outstanding_balance ?? 0))}</TableCell>
                       <TableCell><Badge className={`${statusColors[s.status || "active"]} text-[10px]`}>{s.status || "active"}</Badge></TableCell>
                     </TableRow>
                   ))}
@@ -175,7 +194,7 @@ export default function Suppliers() {
                       <TableCell className="text-sm">{po.suppliers?.company || "—"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{new Date(po.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="font-mono">{po.purchase_order_items?.length ?? 0}</TableCell>
-                      <TableCell className="font-mono font-semibold">${Number(po.total ?? 0).toLocaleString()}</TableCell>
+                      <TableCell className="font-mono font-semibold">{formatKSh(Number(po.total ?? 0))}</TableCell>
                       <TableCell><Badge className={`${statusColors[po.status]} text-[10px]`}>{po.status}</Badge></TableCell>
                     </TableRow>
                   ))}

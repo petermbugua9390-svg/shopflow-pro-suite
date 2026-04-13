@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Store, Users, DollarSign, MapPin, Phone, TrendingUp } from "lucide-react";
+import { formatKSh } from "@/lib/currency";
 
 const statusColors: Record<string, string> = {
   open: "bg-success text-success-foreground",
@@ -44,7 +45,7 @@ export default function Branches() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Active Branches" value={activeBranches.toString()} icon={Store} subtitle={`${items.length} total locations`} />
         <StatCard title="Total Employees" value={totalEmployees.toString()} icon={Users} subtitle="Across all branches" />
-        <StatCard title="Combined Daily Revenue" value={`$${(totalDailyRevenue / 1000).toFixed(1)}k`} icon={DollarSign} subtitle="All branches" />
+        <StatCard title="Combined Daily Revenue" value={formatKSh(totalDailyRevenue, true)} icon={DollarSign} subtitle="All branches" />
         <StatCard title="Top Branch" value={topBranch?.name || "—"} icon={TrendingUp} subtitle="Highest daily revenue" />
       </div>
 
@@ -77,11 +78,11 @@ export default function Branches() {
                   </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Daily Revenue</p>
-                    <p className="text-sm font-bold font-mono text-primary">${Number(branch.daily_revenue ?? 0).toLocaleString()}</p>
+                    <p className="text-sm font-bold font-mono text-primary">{formatKSh(Number(branch.daily_revenue ?? 0))}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Monthly Target</p>
-                    <p className="text-sm font-mono">${(Number(branch.monthly_target ?? 0) / 1000).toFixed(0)}k</p>
+                    <p className="text-sm font-mono">{formatKSh(Number(branch.monthly_target ?? 0), true)}</p>
                   </div>
                 </div>
                 {Number(branch.monthly_target ?? 0) > 0 && (
