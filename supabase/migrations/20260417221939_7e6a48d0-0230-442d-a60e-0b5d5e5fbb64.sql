@@ -1,0 +1,35 @@
+
+-- Wipe all transactional and seed data for a clean-slate store start
+DELETE FROM public.sale_returns;
+DELETE FROM public.sale_payments;
+DELETE FROM public.sale_discounts;
+DELETE FROM public.sale_items;
+DELETE FROM public.sales;
+DELETE FROM public.customer_loyalty;
+DELETE FROM public.customer_credit;
+DELETE FROM public.customers;
+DELETE FROM public.purchase_order_items;
+DELETE FROM public.purchase_deliveries;
+DELETE FROM public.purchase_orders;
+DELETE FROM public.supplier_payments;
+DELETE FROM public.supplier_products;
+DELETE FROM public.suppliers;
+DELETE FROM public.inventory_transfer_items;
+DELETE FROM public.inventory_transfers;
+DELETE FROM public.inventory_adjustments;
+DELETE FROM public.inventory;
+DELETE FROM public.inventory_locations;
+DELETE FROM public.product_barcodes;
+DELETE FROM public.product_images;
+DELETE FROM public.product_variations;
+DELETE FROM public.products;
+DELETE FROM public.product_categories;
+DELETE FROM public.branch_employees;
+DELETE FROM public.employee_shifts;
+DELETE FROM public.branches;
+DELETE FROM public.gift_cards;
+DELETE FROM public.coupons;
+DELETE FROM public.expenses;
+DELETE FROM public.analytics_data;
+DELETE FROM public.forecast_data;
+DELETE FROM public.ai_analytics;
