@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Download, FileText, DollarSign, Calculator } from "lucide-react";
 import { formatKSh } from "@/lib/currency";
 import { useSalesHistory } from "@/hooks/useSales";
-import { exportToCsv } from "@/lib/exportCsv";
+import { exportCsv } from "@/lib/exportCsv";
 import { format } from "date-fns";
 
 export default function Reports() {
@@ -27,7 +27,7 @@ export default function Reports() {
       Total: Number(s.total).toFixed(2),
       Status: s.status,
     }));
-    exportToCsv(`financial-report-${format(new Date(), "yyyy-MM-dd")}.csv`, rows);
+    exportCsv(rows, `financial-report-${format(new Date(), "yyyy-MM-dd")}.csv`);
   };
 
   return (
