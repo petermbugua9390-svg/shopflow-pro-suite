@@ -34,11 +34,11 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { label: "Store Name", value: "RetailPro Main Store" },
-                  { label: "Business ID", value: "RP-2024-001" },
-                  { label: "Currency", value: "USD ($)" },
-                  { label: "Tax Rate", value: "8.0%" },
-                  { label: "Time Zone", value: "America/New_York (EST)" },
+                  { label: "Store Name", value: "My Store" },
+                  { label: "Business ID", value: "—" },
+                  { label: "Currency", value: "Kenyan Shilling (KSh)" },
+                  { label: "Tax Rate", value: "16% VAT" },
+                  { label: "Time Zone", value: "Africa/Nairobi (EAT)" },
                   { label: "Language", value: "English" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between border-b pb-2 last:border-0">
