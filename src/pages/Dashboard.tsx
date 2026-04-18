@@ -1,17 +1,20 @@
 import { StatCard } from "@/components/StatCard";
-import { DollarSign, ShoppingCart, TrendingUp, Package, AlertTriangle, Users } from "lucide-react";
+import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { dailySalesData, weeklySalesData, topProducts, lowStockProducts } from "@/data/mockData";
-import { useDashboardStats } from "@/hooks/useSales";
-import { useSalesHistory } from "@/hooks/useSales";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { useDashboardStats, useSalesHistory } from "@/hooks/useSales";
+import { useProducts } from "@/hooks/useProducts";
 import { format } from "date-fns";
-import { formatKSh, formatKShInt } from "@/lib/currency";
+import { formatKSh } from "@/lib/currency";
 
 export default function Dashboard() {
   const { data: stats } = useDashboardStats();
   const { data: recentSales } = useSalesHistory();
+  const { data: products } = useProducts();
+
+  const lowStock = (products ?? []).filter(
+    (p) => p.is_active && p.stock_quantity <= (p.reorder_level ?? 10)
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -51,128 +54,50 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2 glass-card border-border/50">
+      {/* Bottom Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="glass-card border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Sales Today</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              Low Stock Alerts
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={dailySalesData}>
-                <defs>
-                  <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(172, 66%, 40%)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(172, 66%, 40%)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 90%)" />
-                <XAxis dataKey="hour" tick={{ fontSize: 11 }} stroke="hsl(220, 10%, 50%)" />
-                <YAxis tick={{ fontSize: 11 }} stroke="hsl(220, 10%, 50%)" tickFormatter={(v) => `KSh ${v}`} />
-                <Tooltip
-                  contentStyle={{
-                    background: "hsl(0, 0%, 100%)",
-                    border: "1px solid hsl(220, 14%, 90%)",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                  formatter={(value: number) => [`KSh ${value.toLocaleString()}`, "Sales"]}
-                />
-                <Area type="monotone" dataKey="sales" stroke="hsl(172, 66%, 40%)" strokeWidth={2} fill="url(#salesGradient)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <CardContent className="space-y-2.5">
+            {lowStock.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No low stock items</p>
+            ) : (
+              lowStock.slice(0, 6).map((product) => (
+                <div key={product.id} className="flex items-center justify-between">
+                  <p className="text-sm">{product.name}</p>
+                  <Badge variant="destructive" className="text-[10px]">
+                    {product.stock_quantity} left
+                  </Badge>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
 
         <Card className="glass-card border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Top Products</CardTitle>
+            <CardTitle className="text-sm font-semibold">Recent Transactions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {topProducts.map((product, i) => (
-              <div key={product.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-muted-foreground w-4">#{i + 1}</span>
-                  <div>
-                    <p className="text-sm font-medium leading-tight">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">{product.sold} sold</p>
-                  </div>
+          <CardContent className="space-y-2.5">
+            {(recentSales ?? []).slice(0, 6).map((sale) => (
+              <div key={sale.id} className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium font-mono">{sale.sale_number ?? sale.id.slice(0, 8)}</p>
+                  <p className="text-[10px] text-muted-foreground">{format(new Date(sale.created_at), "MMM dd HH:mm")}</p>
                 </div>
-                <span className="text-sm font-semibold font-mono">KSh {product.revenue.toLocaleString()}</span>
+                <span className="text-sm font-semibold font-mono">{formatKSh(Number(sale.total))}</span>
               </div>
             ))}
+            {(!recentSales || recentSales.length === 0) && (
+              <p className="text-sm text-muted-foreground text-center py-4">No sales yet</p>
+            )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2 glass-card border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Weekly Revenue vs Target</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={weeklySalesData} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 90%)" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="hsl(220, 10%, 50%)" />
-                <YAxis tick={{ fontSize: 11 }} stroke="hsl(220, 10%, 50%)" tickFormatter={(v) => `KSh ${v / 1000}k`} />
-                <Tooltip
-                  contentStyle={{
-                    background: "hsl(0, 0%, 100%)",
-                    border: "1px solid hsl(220, 14%, 90%)",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                  formatter={(value: number) => [`KSh ${value.toLocaleString()}`, ""]}
-                />
-                <Bar dataKey="revenue" fill="hsl(172, 66%, 40%)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="target" fill="hsl(220, 14%, 85%)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-4">
-          <Card className="glass-card border-border/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-warning" />
-                Low Stock Alerts
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2.5">
-              {lowStockProducts.map((product) => (
-                <div key={product.name} className="flex items-center justify-between">
-                  <p className="text-sm">{product.name}</p>
-                  <Badge variant="destructive" className="text-[10px]">
-                    {product.stock} left
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card border-border/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Recent Transactions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2.5">
-              {(recentSales ?? []).slice(0, 4).map((sale) => (
-                <div key={sale.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium font-mono">{sale.sale_number ?? sale.id.slice(0, 8)}</p>
-                    <p className="text-[10px] text-muted-foreground">{format(new Date(sale.created_at), "HH:mm")}</p>
-                  </div>
-                  <span className="text-sm font-semibold font-mono">{formatKSh(Number(sale.total))}</span>
-                </div>
-              ))}
-              {(!recentSales || recentSales.length === 0) && (
-                <p className="text-sm text-muted-foreground text-center py-4">No sales yet</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );
