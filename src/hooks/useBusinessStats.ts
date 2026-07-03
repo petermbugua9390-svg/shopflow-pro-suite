@@ -99,11 +99,11 @@ export function useBusinessStats() {
       const { count: pendingPOs } = await supabase
         .from("purchase_orders")
         .select("id", { count: "exact", head: true })
-        .in("status", ["draft", "sent", "confirmed"]);
+        .in("status", ["pending", "confirmed", "shipped"]);
       const { count: pendingDeliveries } = await supabase
         .from("purchase_deliveries")
         .select("id", { count: "exact", head: true })
-        .neq("status", "received");
+        .is("delivery_date", null);
 
       // Stock alerts
       const { data: products } = await supabase.from("products").select("stock_quantity,reorder_level").eq("is_active", true);
