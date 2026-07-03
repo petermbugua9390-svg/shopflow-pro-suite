@@ -231,13 +231,18 @@ export function useSalesByCashier() {
   return useQuery({
     queryKey: ["sales-by-cashier"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: sales } = await supabase
         .from("sales")
-        .select("total,cashier_id,profiles!sales_cashier_id_fkey(full_name)")
+        .select("total,cashier_id")
         .eq("status", "completed");
+      const ids = Array.from(new Set((sales ?? []).map((s) => s.cashier_id).filter(Boolean))) as string[];
+      const { data: profiles } = ids.length
+        ? await supabase.from("profiles").select("user_id,full_name").in("user_id", ids)
+        : { data: [] as { user_id: string; full_name: string | null }[] };
+      const nameMap = new Map((profiles ?? []).map((p) => [p.user_id, p.full_name ?? "Unknown"]));
       const map = new Map<string, number>();
-      (data ?? []).forEach((s: any) => {
-        const name = s.profiles?.full_name ?? "Unknown";
+      (sales ?? []).forEach((s) => {
+        const name = s.cashier_id ? nameMap.get(s.cashier_id) ?? "Unknown" : "Unassigned";
         map.set(name, (map.get(name) ?? 0) + Number(s.total));
       });
       return Array.from(map, ([cashier, total]) => ({ cashier, total }));
