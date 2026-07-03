@@ -213,13 +213,18 @@ export function useSalesByBranch() {
   return useQuery({
     queryKey: ["sales-by-branch"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: sales } = await supabase
         .from("sales")
-        .select("total,branches(name)")
+        .select("total,branch_id")
         .eq("status", "completed");
+      const ids = Array.from(new Set((sales ?? []).map((s) => s.branch_id).filter(Boolean))) as string[];
+      const { data: branches } = ids.length
+        ? await supabase.from("branches").select("id,name").in("id", ids)
+        : { data: [] as { id: string; name: string }[] };
+      const nameMap = new Map((branches ?? []).map((b) => [b.id, b.name]));
       const map = new Map<string, number>();
-      (data ?? []).forEach((s: any) => {
-        const name = s.branches?.name ?? "Unassigned";
+      (sales ?? []).forEach((s) => {
+        const name = s.branch_id ? nameMap.get(s.branch_id) ?? "Unassigned" : "Unassigned";
         map.set(name, (map.get(name) ?? 0) + Number(s.total));
       });
       return Array.from(map, ([branch, total]) => ({ branch, total }));
