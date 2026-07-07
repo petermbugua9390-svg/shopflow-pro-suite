@@ -7,14 +7,36 @@ import type { Tables } from "@/integrations/supabase/types";
 export type Sale = Tables<"sales"> & {
   sale_items?: (Tables<"sale_items"> & { products?: { name: string } | null })[];
   sale_payments?: Tables<"sale_payments">[];
+  customers?: { name: string } | null;
 };
 
+export type PaymentMethod = "cash" | "card" | "mobile" | "credit" | "gift_card" | "split";
+
+export interface CheckoutItem {
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  discount: number;
+  tax: number;
+  total: number;
+}
+
+export interface CheckoutPayment {
+  method: Exclude<PaymentMethod, "split">;
+  amount: number;
+  reference?: string;
+}
+
 interface CheckoutPayload {
-  items: { product_id: string; quantity: number; unit_price: number; total: number }[];
+  items: CheckoutItem[];
   subtotal: number;
   tax_amount: number;
+  discount_amount: number;
   total: number;
-  payment_method: "cash" | "card" | "mobile" | "credit" | "gift_card" | "split";
+  payment_method: PaymentMethod;
+  payments: CheckoutPayment[];
+  customer_id?: string | null;
+  notes?: string | null;
 }
 
 export function useSalesHistory() {
@@ -23,7 +45,7 @@ export function useSalesHistory() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sales")
-        .select("*, sale_items(*, products(name)), sale_payments(*)")
+        .select("*, sale_items(*, products(name)), sale_payments(*), customers(name)")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
@@ -40,37 +62,41 @@ export function useCheckout() {
     mutationFn: async (payload: CheckoutPayload) => {
       if (!user) throw new Error("Not authenticated");
 
-      // Create sale
       const { data: sale, error: saleError } = await supabase
         .from("sales")
         .insert({
           cashier_id: user.id,
+          customer_id: payload.customer_id ?? null,
           subtotal: payload.subtotal,
           tax_amount: payload.tax_amount,
+          discount_amount: payload.discount_amount,
           total: payload.total,
+          notes: payload.notes ?? null,
           status: "completed",
         })
         .select()
         .single();
       if (saleError) throw saleError;
 
-      // Create sale items
       const saleItems = payload.items.map((item) => ({
         sale_id: sale.id,
         product_id: item.product_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
+        discount: item.discount,
+        tax: item.tax,
         total: item.total,
       }));
       const { error: itemsError } = await supabase.from("sale_items").insert(saleItems);
       if (itemsError) throw itemsError;
 
-      // Create payment record
-      const { error: payError } = await supabase.from("sale_payments").insert({
+      const paymentRows = payload.payments.map((p) => ({
         sale_id: sale.id,
-        payment_method: payload.payment_method,
-        amount: payload.total,
-      });
+        payment_method: p.method,
+        amount: p.amount,
+        reference_number: p.reference ?? null,
+      }));
+      const { error: payError } = await supabase.from("sale_payments").insert(paymentRows);
       if (payError) throw payError;
 
       return sale;
@@ -78,8 +104,44 @@ export function useCheckout() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sales"] });
       qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["business-stats"] });
     },
     onError: (e) => toast.error("Checkout failed: " + e.message),
+  });
+}
+
+export function useProcessReturn() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      sale_id: string;
+      items: { product_id: string; quantity: number; refund_amount: number }[];
+      reason: string;
+    }) => {
+      if (!user) throw new Error("Not authenticated");
+      const rows = payload.items.map((i) => ({
+        sale_id: payload.sale_id,
+        product_id: i.product_id,
+        quantity: i.quantity,
+        refund_amount: i.refund_amount,
+        reason: payload.reason,
+        processed_by: user.id,
+      }));
+      const { error } = await supabase.from("sale_returns").insert(rows);
+      if (error) throw error;
+      const { error: updErr } = await supabase
+        .from("sales")
+        .update({ status: "refunded" })
+        .eq("id", payload.sale_id);
+      if (updErr) throw updErr;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sales"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Return processed and stock restored");
+    },
+    onError: (e) => toast.error("Return failed: " + e.message),
   });
 }
 
