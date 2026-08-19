@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useProducts, useDeleteProduct, type Product } from "@/hooks/useProducts";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
-import { Search, Download, Plus, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
+import { StockAdjustDialog } from "@/components/StockAdjustDialog";
+import { Search, Download, Plus, ArrowUpDown, Pencil, Trash2, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ export default function Inventory() {
   const [formOpen, setFormOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [adjustProduct, setAdjustProduct] = useState<Product | null>(null);
 
   const items = products || [];
   const totalValue = items.reduce((s, p) => s + p.price * p.stock_quantity, 0);
@@ -173,6 +175,9 @@ export default function Inventory() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Adjust stock" onClick={() => setAdjustProduct(product)}>
+                        <SlidersHorizontal className="h-3.5 w-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(product)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -196,6 +201,7 @@ export default function Inventory() {
       </Card>
 
       <ProductFormDialog open={formOpen} onOpenChange={setFormOpen} product={editProduct} />
+      <StockAdjustDialog product={adjustProduct} open={!!adjustProduct} onOpenChange={(o) => !o && setAdjustProduct(null)} />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
