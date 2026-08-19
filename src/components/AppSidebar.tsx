@@ -8,6 +8,7 @@ import {
   Truck,
   Receipt,
   BarChart3,
+  ClipboardList,
   Store,
   LogOut,
 } from "lucide-react";
@@ -38,6 +39,7 @@ const mainNav = [
 const managementNav = [
   { title: "Customers", url: "/customers", icon: Users },
   { title: "Suppliers", url: "/suppliers", icon: Truck },
+  { title: "Purchasing", url: "/purchasing", icon: ClipboardList },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Branches", url: "/branches", icon: Store },
 ];
