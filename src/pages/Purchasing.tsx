@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/StatCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TransfersPanel } from "@/components/TransfersPanel";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Download, Search, Trash2, PackageCheck, ClipboardList, Clock, Truck, DollarSign, XCircle } from "lucide-react";
 import { formatKSh } from "@/lib/currency";
@@ -96,6 +98,15 @@ export default function Purchasing() {
         <StatCard title="Open PO Value" value={formatKSh(openValue, true)} icon={DollarSign} subtitle="Not yet received" />
       </div>
 
+      <Tabs defaultValue="orders" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="orders">Purchase Orders</TabsTrigger>
+          <TabsTrigger value="transfers">Stock Transfers</TabsTrigger>
+        </TabsList>
+        <TabsContent value="transfers">
+          <TransfersPanel />
+        </TabsContent>
+        <TabsContent value="orders">
       <Card className="glass-card border-border/50">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -175,6 +186,8 @@ export default function Purchasing() {
           </Table>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
 
       <PurchaseOrderDialog open={createOpen} onOpenChange={setCreateOpen} />
       <ReceiveGoodsDialog order={receiveOrder} open={!!receiveOrder} onOpenChange={(o) => !o && setReceiveOrder(null)} />
