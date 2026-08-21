@@ -185,6 +185,12 @@ export default function Customers() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <CustomerDetailDialog
+        customer={detailCustomer}
+        open={!!detailCustomer}
+        onOpenChange={(o) => !o && setDetailCustomer(null)}
+      />
     </div>
   );
 }
