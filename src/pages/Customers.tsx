@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, Crown, Heart, Search, Plus, Download, Star, Trash2 } from "lucide-react";
+import { Users, Crown, Heart, Search, Plus, Download, Star, Trash2, Eye } from "lucide-react";
+import { CustomerDetailDialog } from "@/components/CustomerDetailDialog";
 import { toast } from "sonner";
 import { formatKSh } from "@/lib/currency";
 import { exportCsv } from "@/lib/exportCsv";
@@ -28,6 +29,7 @@ export default function Customers() {
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [detailCustomer, setDetailCustomer] = useState<Customer | null>(null);
 
   const items = customers || [];
 
@@ -135,12 +137,12 @@ export default function Customers() {
                 <TableHead>Visits</TableHead>
                 <TableHead>Points</TableHead>
                 <TableHead>Credit Balance</TableHead>
-                <TableHead className="w-16">Actions</TableHead>
+                <TableHead className="w-24">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((c) => (
-                <TableRow key={c.id} className="hover:bg-muted/30">
+                <TableRow key={c.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => setDetailCustomer(c)}>
                   <TableCell>
                     <div>
                       <p className="font-medium text-sm">{c.name}</p>
@@ -152,10 +154,15 @@ export default function Customers() {
                   <TableCell className="font-mono">{c.visits ?? 0}</TableCell>
                   <TableCell className="font-mono text-primary">{(c.loyalty_points ?? 0).toLocaleString()}</TableCell>
                   <TableCell className="font-mono">{Number(c.credit_balance ?? 0) > 0 ? formatKSh(Number(c.credit_balance)) : "—"}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteCustomer.mutate(c.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="View profile" onClick={() => setDetailCustomer(c)}>
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Deactivate" onClick={() => deleteCustomer.mutate(c.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
