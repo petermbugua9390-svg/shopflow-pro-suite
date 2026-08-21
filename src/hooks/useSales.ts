@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { applySaleToCustomer } from "@/hooks/useCrm";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Sale = Tables<"sales"> & {
@@ -99,12 +100,25 @@ export function useCheckout() {
       const { error: payError } = await supabase.from("sale_payments").insert(paymentRows);
       if (payError) throw payError;
 
+      if (payload.customer_id) {
+        const creditAmount = payload.payments
+          .filter((p) => p.method === "credit")
+          .reduce((s, p) => s + p.amount, 0);
+        await applySaleToCustomer({
+          customer_id: payload.customer_id,
+          sale_id: sale.id,
+          total: payload.total,
+          creditAmount,
+        });
+      }
+
       return sale;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sales"] });
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["business-stats"] });
+      qc.invalidateQueries({ queryKey: ["customers"] });
     },
     onError: (e) => toast.error("Checkout failed: " + e.message),
   });
