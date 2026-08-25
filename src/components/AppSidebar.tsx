@@ -10,6 +10,7 @@ import {
   BarChart3,
   ClipboardList,
   Store,
+  BookOpen,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +43,7 @@ const managementNav = [
   { title: "Purchasing", url: "/purchasing", icon: ClipboardList },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Branches", url: "/branches", icon: Store },
+  { title: "Accounting", url: "/accounting", icon: BookOpen },
 ];
 
 const systemNav = [
