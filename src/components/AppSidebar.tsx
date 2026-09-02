@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Store,
   BookOpen,
+  ShieldCheck,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,6 +49,7 @@ const managementNav = [
 
 const systemNav = [
   { title: "Reports", url: "/reports", icon: TrendingUp },
+  { title: "Staff & Security", url: "/employees", icon: ShieldCheck },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 

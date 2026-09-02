@@ -18,6 +18,7 @@ import Accounting from "./pages/Accounting";
 import Reports from "./pages/Reports";
 import Branches from "./pages/Branches";
 import Settings from "./pages/Settings";
+import Employees from "./pages/Employees";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -50,7 +51,9 @@ function ProtectedRoutes() {
         <Route path="/accounting" element={<Accounting />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/branches" element={<Branches />} />
+        <Route path="/employees" element={<Employees />} />
         <Route path="/settings" element={<Settings />} />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
