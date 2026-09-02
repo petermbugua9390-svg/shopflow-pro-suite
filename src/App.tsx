@@ -51,7 +51,9 @@ function ProtectedRoutes() {
         <Route path="/accounting" element={<Accounting />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/branches" element={<Branches />} />
+        <Route path="/employees" element={<Employees />} />
         <Route path="/settings" element={<Settings />} />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
