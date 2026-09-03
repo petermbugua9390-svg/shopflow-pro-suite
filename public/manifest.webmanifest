@@ -1,0 +1,14 @@
+{
+  "name": "ShopFlow Pro Enterprise POS",
+  "short_name": "ShopFlow POS",
+  "description": "Offline-ready retail point of sale and inventory operations.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1718",
+  "theme_color": "#149b8b",
+  "icons": [{
+    "src": "/favicon.ico",
+    "sizes": "any",
+    "type": "image/x-icon"
+  }]
+}
