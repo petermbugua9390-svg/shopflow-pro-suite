@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon, User, Shield, Printer, Monitor, Bell, Database, Globe, CreditCard } from "lucide-react";
+import { HardwareTab } from "@/components/HardwareTab";
+import { Settings as SettingsIcon, User, Shield, Monitor, Bell, Globe } from "lucide-react";
 
 export default function Settings() {
   return (
