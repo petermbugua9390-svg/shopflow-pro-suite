@@ -111,12 +111,26 @@ export default function POSTerminal() {
         (filteredProducts.length === 1 ? filteredProducts[0] : null);
       if (match) {
         addToCart(match);
+        if (hardware.scannerBeep) beep();
         setSearchQuery("");
       } else {
         toast.error("No product matches that code");
       }
     }
   };
+
+  // Hardware scanner: keyboard-wedge bursts anywhere on the page
+  const handleHardwareScan = useCallback((code: string) => {
+    const match = products?.find((p) => p.barcode === code || p.sku === code);
+    if (!match) {
+      toast.error(`No product matches ${code}`);
+      return;
+    }
+    addToCart(match);
+    if (hardware.scannerBeep) beep();
+  }, [products, addToCart, hardware.scannerBeep]);
+
+  useBarcodeScanner(handleHardwareScan, hardware.scannerEnabled);
 
   const updateQuantity = (id: string, delta: number) => {
     setCart((prev) => prev.map((i) => {
