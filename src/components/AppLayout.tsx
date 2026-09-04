@@ -1,9 +1,12 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Bell, Search, Wifi } from "lucide-react";
+import { Bell, Search, Wifi, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useOnlineStatus } from "@/hooks/useHardware";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const online = useOnlineStatus();
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -23,9 +26,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-success text-xs font-medium">
-                <Wifi className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Online</span>
+              <div className={`flex items-center gap-1.5 text-xs font-medium ${online ? "text-success" : "text-warning"}`}>
+                {online ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
+                <span className="hidden sm:inline">{online ? "Online" : "Offline"}</span>
               </div>
               <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
                 <Bell className="h-4 w-4 text-muted-foreground" />
