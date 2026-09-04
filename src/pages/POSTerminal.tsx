@@ -18,6 +18,8 @@ import { SplitPaymentDialog } from "@/components/SplitPaymentDialog";
 import { HeldSalesDialog } from "@/components/HeldSalesDialog";
 import { toast } from "sonner";
 import { formatKSh } from "@/lib/currency";
+import { useBarcodeScanner, useHardwareSettings } from "@/hooks/useHardware";
+import { beep, kickCashDrawer } from "@/lib/hardware";
 
 interface CartItem extends HeldCartItem {}
 
@@ -50,6 +52,7 @@ export default function POSTerminal() {
   const { data: customers } = useCustomers();
   const { held, holdSale, removeSale } = useHeldSales();
   const checkout = useCheckout();
+  const { settings: hardware } = useHardwareSettings();
 
   const categoryNames = useMemo(
     () => ["All", ...(categories?.map((c) => c.name) ?? [])],
@@ -108,12 +111,26 @@ export default function POSTerminal() {
         (filteredProducts.length === 1 ? filteredProducts[0] : null);
       if (match) {
         addToCart(match);
+        if (hardware.scannerBeep) beep();
         setSearchQuery("");
       } else {
         toast.error("No product matches that code");
       }
     }
   };
+
+  // Hardware scanner: keyboard-wedge bursts anywhere on the page
+  const handleHardwareScan = useCallback((code: string) => {
+    const match = products?.find((p) => p.barcode === code || p.sku === code);
+    if (!match) {
+      toast.error(`No product matches ${code}`);
+      return;
+    }
+    addToCart(match);
+    if (hardware.scannerBeep) beep();
+  }, [products, addToCart, hardware.scannerBeep]);
+
+  useBarcodeScanner(handleHardwareScan, hardware.scannerEnabled);
 
   const updateQuantity = (id: string, delta: number) => {
     setCart((prev) => prev.map((i) => {
@@ -206,6 +223,12 @@ export default function POSTerminal() {
           setReceiptOpen(true);
           clearCart();
           toast.success(`Payment of ${formatKSh(total)} completed`);
+          const cashInvolved = method === "cash" || payments.some((p) => p.method === "cash");
+          if (hardware.cashDrawerEnabled && cashInvolved) {
+            kickCashDrawer().then((res) => {
+              if (!res.ok) toast.error(res.message);
+            });
+          }
         },
       }
     );
