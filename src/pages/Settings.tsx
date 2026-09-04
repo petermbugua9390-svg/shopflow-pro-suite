@@ -109,31 +109,7 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="hardware">
-          <Card className="glass-card border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2"><Printer className="h-4 w-4 text-primary" />Hardware Devices</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {[
-                { name: "Epson TM-T88VI", type: "Receipt Printer", port: "USB", status: "connected" },
-                { name: "Honeywell Voyager 1400g", type: "Barcode Scanner", port: "USB HID", status: "connected" },
-                { name: "Zebra ZD421", type: "Label Printer", port: "Network (192.168.1.45)", status: "connected" },
-                { name: "APG Vasario", type: "Cash Drawer", port: "Printer-driven", status: "connected" },
-                { name: "Verifone VX 520", type: "Card Terminal", port: "Serial/IP", status: "disconnected" },
-                { name: "Customer Display 2x20", type: "Customer Display", port: "COM3", status: "connected" },
-              ].map((device) => (
-                <div key={device.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
-                  <div>
-                    <p className="text-sm font-medium">{device.name}</p>
-                    <p className="text-xs text-muted-foreground">{device.type} · {device.port}</p>
-                  </div>
-                  <Badge className={`text-[10px] ${device.status === "connected" ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}`}>
-                    {device.status}
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          <HardwareTab />
         </TabsContent>
 
         <TabsContent value="integrations">
