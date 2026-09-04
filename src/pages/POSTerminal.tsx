@@ -18,6 +18,8 @@ import { SplitPaymentDialog } from "@/components/SplitPaymentDialog";
 import { HeldSalesDialog } from "@/components/HeldSalesDialog";
 import { toast } from "sonner";
 import { formatKSh } from "@/lib/currency";
+import { useBarcodeScanner, useHardwareSettings } from "@/hooks/useHardware";
+import { beep, kickCashDrawer } from "@/lib/hardware";
 
 interface CartItem extends HeldCartItem {}
 
