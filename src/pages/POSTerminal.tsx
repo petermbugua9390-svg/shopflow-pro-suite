@@ -223,6 +223,12 @@ export default function POSTerminal() {
           setReceiptOpen(true);
           clearCart();
           toast.success(`Payment of ${formatKSh(total)} completed`);
+          const cashInvolved = method === "cash" || payments.some((p) => p.method === "cash");
+          if (hardware.cashDrawerEnabled && cashInvolved) {
+            kickCashDrawer().then((res) => {
+              if (!res.ok) toast.error(res.message);
+            });
+          }
         },
       }
     );
