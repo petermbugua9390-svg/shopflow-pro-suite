@@ -52,6 +52,7 @@ export default function POSTerminal() {
   const { data: customers } = useCustomers();
   const { held, holdSale, removeSale } = useHeldSales();
   const checkout = useCheckout();
+  const { settings: hardware } = useHardwareSettings();
 
   const categoryNames = useMemo(
     () => ["All", ...(categories?.map((c) => c.name) ?? [])],
