@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { formatKSh } from "@/lib/currency";
 import { useBarcodeScanner, useHardwareSettings } from "@/hooks/useHardware";
 import { beep, kickCashDrawer } from "@/lib/hardware";
+import { validateCoupon, redeemCoupon, type Coupon } from "@/hooks/usePromotions";
 
 interface CartItem extends HeldCartItem {}
 
@@ -45,6 +46,9 @@ export default function POSTerminal() {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [splitOpen, setSplitOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const { data: products, isLoading: productsLoading } = useProducts();
@@ -151,6 +155,7 @@ export default function POSTerminal() {
   const removeItem = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
   const clearCart = () => {
     setCart([]); setInvoiceDiscount(0); setNotes(""); setCustomerId("walk-in");
+    setCouponCode(""); setAppliedCoupon(null);
   };
 
   const grossSubtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
@@ -170,6 +175,29 @@ export default function POSTerminal() {
     return s + (lineFinal * i.tax_rate / 100);
   }, 0);
   const total = netSubtotal + tax;
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    if (cart.length === 0) return toast.error("Add items before applying a coupon");
+    setCouponChecking(true);
+    try {
+      const { coupon } = await validateCoupon(couponCode, subtotalAfterLine);
+      setAppliedCoupon(coupon);
+      setInvoiceDiscountType(coupon.type === "percentage" ? "percent" : "flat");
+      setInvoiceDiscount(Number(coupon.value));
+      toast.success(`Coupon ${coupon.code} applied`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCouponChecking(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setInvoiceDiscount(0);
+  };
 
   const submitSale = (method: PaymentMethod, payments: CheckoutPayment[]) => {
     if (cart.length === 0) return;
@@ -221,6 +249,7 @@ export default function POSTerminal() {
             date: new Date(),
           });
           setReceiptOpen(true);
+          if (appliedCoupon) redeemCoupon(appliedCoupon);
           clearCart();
           toast.success(`Payment of ${formatKSh(total)} completed`);
           const cashInvolved = method === "cash" || payments.some((p) => p.method === "cash");
@@ -476,6 +505,24 @@ export default function POSTerminal() {
           </div>
 
           <div className="border-t p-3 space-y-2.5">
+            {/* Coupon */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground w-16">Coupon</span>
+              <Input
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => { if (e.key === "Enter") applyCoupon(); }}
+                className="h-7 text-xs font-mono flex-1"
+                placeholder="Code"
+                disabled={!!appliedCoupon}
+              />
+              {appliedCoupon ? (
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={removeCoupon}>Remove</Button>
+              ) : (
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={applyCoupon} disabled={couponChecking}>Apply</Button>
+              )}
+            </div>
+
             {/* Invoice discount */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground w-16">Discount</span>
