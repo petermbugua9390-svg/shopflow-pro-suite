@@ -1,8 +1,10 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Bell, Search, Wifi, WifiOff } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useOnlineStatus } from "@/hooks/useHardware";
+import { AlertsBell } from "@/components/AlertsBell";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const online = useOnlineStatus();
