@@ -17,15 +17,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <header className="h-14 flex items-center justify-between border-b bg-card/50 backdrop-blur-sm px-4 shrink-0">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-              <div className="hidden md:flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search products, orders, customers..."
-                  className="bg-transparent text-sm border-none outline-none w-64 placeholder:text-muted-foreground/60"
-                />
-                <kbd className="hidden lg:inline-flex text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
-              </div>
+              <GlobalSearch />
             </div>
             <div className="flex items-center gap-3">
               <div className={`flex items-center gap-1.5 text-xs font-medium ${online ? "text-success" : "text-warning"}`}>
