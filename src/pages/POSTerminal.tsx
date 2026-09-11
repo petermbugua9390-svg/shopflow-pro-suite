@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { formatKSh } from "@/lib/currency";
 import { useBarcodeScanner, useHardwareSettings } from "@/hooks/useHardware";
 import { beep, kickCashDrawer } from "@/lib/hardware";
+import { validateCoupon, redeemCoupon, validateGiftCard, chargeGiftCard, type Coupon } from "@/hooks/usePromotions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface CartItem extends HeldCartItem {}
 
@@ -45,6 +47,12 @@ export default function POSTerminal() {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [splitOpen, setSplitOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false);
+  const [giftCode, setGiftCode] = useState("");
+  const [giftChecking, setGiftChecking] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const { data: products, isLoading: productsLoading } = useProducts();
@@ -151,6 +159,7 @@ export default function POSTerminal() {
   const removeItem = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
   const clearCart = () => {
     setCart([]); setInvoiceDiscount(0); setNotes(""); setCustomerId("walk-in");
+    setCouponCode(""); setAppliedCoupon(null);
   };
 
   const grossSubtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
@@ -170,6 +179,49 @@ export default function POSTerminal() {
     return s + (lineFinal * i.tax_rate / 100);
   }, 0);
   const total = netSubtotal + tax;
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    if (cart.length === 0) return toast.error("Add items before applying a coupon");
+    setCouponChecking(true);
+    try {
+      const { coupon } = await validateCoupon(couponCode, subtotalAfterLine);
+      setAppliedCoupon(coupon);
+      setInvoiceDiscountType(coupon.type === "percentage" ? "percent" : "flat");
+      setInvoiceDiscount(Number(coupon.value));
+      toast.success(`Coupon ${coupon.code} applied`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCouponChecking(false);
+    }
+  };
+
+  const payWithGiftCard = async () => {
+    setGiftChecking(true);
+    try {
+      const card = await validateGiftCard(giftCode);
+      if (Number(card.current_balance) < total) {
+        throw new Error(
+          `Card only has ${formatKSh(Number(card.current_balance))}. Use Split payment to cover the rest.`
+        );
+      }
+      await chargeGiftCard(card, total);
+      setGiftOpen(false);
+      setGiftCode("");
+      submitSale("gift_card", [{ method: "gift_card", amount: total, reference: card.code }]);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setGiftChecking(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setInvoiceDiscount(0);
+  };
 
   const submitSale = (method: PaymentMethod, payments: CheckoutPayment[]) => {
     if (cart.length === 0) return;
@@ -221,6 +273,7 @@ export default function POSTerminal() {
             date: new Date(),
           });
           setReceiptOpen(true);
+          if (appliedCoupon) redeemCoupon(appliedCoupon);
           clearCart();
           toast.success(`Payment of ${formatKSh(total)} completed`);
           const cashInvolved = method === "cash" || payments.some((p) => p.method === "cash");
@@ -476,6 +529,24 @@ export default function POSTerminal() {
           </div>
 
           <div className="border-t p-3 space-y-2.5">
+            {/* Coupon */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground w-16">Coupon</span>
+              <Input
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => { if (e.key === "Enter") applyCoupon(); }}
+                className="h-7 text-xs font-mono flex-1"
+                placeholder="Code"
+                disabled={!!appliedCoupon}
+              />
+              {appliedCoupon ? (
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={removeCoupon}>Remove</Button>
+              ) : (
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={applyCoupon} disabled={couponChecking}>Apply</Button>
+              )}
+            </div>
+
             {/* Invoice discount */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground w-16">Discount</span>
@@ -532,7 +603,7 @@ export default function POSTerminal() {
               <Button onClick={() => quickPay("credit")} disabled={cart.length === 0 || checkout.isPending} variant="outline" className="flex-col h-12 gap-0.5">
                 <Users className="h-4 w-4" /><span className="text-[10px]">Credit</span>
               </Button>
-              <Button onClick={() => quickPay("gift_card")} disabled={cart.length === 0 || checkout.isPending} variant="outline" className="flex-col h-12 gap-0.5">
+              <Button onClick={() => setGiftOpen(true)} disabled={cart.length === 0 || checkout.isPending} variant="outline" className="flex-col h-12 gap-0.5">
                 <Gift className="h-4 w-4" /><span className="text-[10px]">Gift Card</span>
               </Button>
             </div>
@@ -546,7 +617,27 @@ export default function POSTerminal() {
           total={total}
           onConfirm={(payments) => submitSale("split", payments)}
         />
-        <HeldSalesDialog
+        <Dialog open={giftOpen} onOpenChange={setGiftOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Pay with gift card</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Input
+              autoFocus
+              value={giftCode}
+              onChange={(e) => setGiftCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => { if (e.key === "Enter") payWithGiftCard(); }}
+              placeholder="GIFT-XXXXXX"
+              className="font-mono"
+            />
+            <p className="text-xs text-muted-foreground">Amount due: {formatKSh(total)}</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={payWithGiftCard} disabled={giftChecking || !giftCode.trim()}>Charge card</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <HeldSalesDialog
           open={heldOpen}
           onOpenChange={setHeldOpen}
           held={held}

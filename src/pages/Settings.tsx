@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { HardwareTab } from "@/components/HardwareTab";
+import { BackupTab } from "@/components/BackupTab";
 import { Settings as SettingsIcon, User, Shield, Monitor, Bell, Globe } from "lucide-react";
 
 export default function Settings() {
@@ -25,6 +26,7 @@ export default function Settings() {
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="backup">Backup</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -200,6 +202,9 @@ export default function Settings() {
               ))}
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="backup">
+          <BackupTab />
         </TabsContent>
       </Tabs>
     </div>

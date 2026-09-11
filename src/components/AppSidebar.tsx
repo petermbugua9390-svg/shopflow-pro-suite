@@ -12,6 +12,7 @@ import {
   Store,
   BookOpen,
   ShieldCheck,
+  Ticket,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +43,7 @@ const managementNav = [
   { title: "Customers", url: "/customers", icon: Users },
   { title: "Suppliers", url: "/suppliers", icon: Truck },
   { title: "Purchasing", url: "/purchasing", icon: ClipboardList },
+  { title: "Promotions", url: "/promotions", icon: Ticket },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Branches", url: "/branches", icon: Store },
   { title: "Accounting", url: "/accounting", icon: BookOpen },
