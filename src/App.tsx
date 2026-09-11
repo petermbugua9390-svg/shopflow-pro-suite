@@ -14,6 +14,7 @@ import Analytics from "./pages/Analytics";
 import Customers from "./pages/Customers";
 import Suppliers from "./pages/Suppliers";
 import Purchasing from "./pages/Purchasing";
+import Promotions from "./pages/Promotions";
 import Accounting from "./pages/Accounting";
 import Reports from "./pages/Reports";
 import Branches from "./pages/Branches";
@@ -48,6 +49,7 @@ function ProtectedRoutes() {
         <Route path="/customers" element={<Customers />} />
         <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/purchasing" element={<Purchasing />} />
+        <Route path="/promotions" element={<Promotions />} />
         <Route path="/accounting" element={<Accounting />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/branches" element={<Branches />} />
