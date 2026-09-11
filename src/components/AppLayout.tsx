@@ -24,10 +24,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 {online ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
                 <span className="hidden sm:inline">{online ? "Online" : "Offline"}</span>
               </div>
-              <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
-                <Bell className="h-4 w-4 text-muted-foreground" />
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
-              </button>
+              <AlertsBell />
               <Badge variant="outline" className="text-xs font-mono">
                 Branch: Main Store
               </Badge>
