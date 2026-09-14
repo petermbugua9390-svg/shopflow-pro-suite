@@ -190,7 +190,7 @@ export default function Promotions() {
   const saveCoupon = useSaveCoupon();
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Promotions</h1>
         <p className="text-sm text-muted-foreground">Discount codes and gift cards you can use at the till.</p>
