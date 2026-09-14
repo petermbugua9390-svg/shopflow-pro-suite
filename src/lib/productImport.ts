@@ -73,6 +73,7 @@ const INSTRUCTIONS = [
   ["Cost Price (KSh)", "No", "What you paid the supplier, in Kenyan Shillings."],
   ["Stock Quantity", "No", "How many you have right now. Defaults to 0."],
   ["Reorder Level", "No", "Stock level that triggers a low stock alert. Defaults to 10."],
+  ["Description", "No", "Short note about the product, e.g. size or flavour."],
 ];
 
 export function downloadProductTemplate() {
