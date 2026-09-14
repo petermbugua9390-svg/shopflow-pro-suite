@@ -24,6 +24,7 @@ const schema = z.object({
   stock_quantity: z.coerce.number().int().min(0),
   reorder_level: z.coerce.number().int().min(0),
   unit: z.string().optional(),
+  description: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -32,9 +33,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product?: Product | null;
+  startWithScanner?: boolean;
 }
 
-export function ProductFormDialog({ open, onOpenChange, product }: Props) {
+export function ProductFormDialog({ open, onOpenChange, product, startWithScanner }: Props) {
   const { data: categories } = useProductCategories();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -44,7 +46,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: "", sku: "", barcode: "", category_id: "", price: 0, cost_price: 0, stock_quantity: 0, reorder_level: 10, unit: "each",
+      name: "", sku: "", barcode: "", category_id: "", price: 0, cost_price: 0, stock_quantity: 0, reorder_level: 10, unit: "each", description: "",
     },
   });
 
@@ -60,10 +62,12 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
         stock_quantity: product.stock_quantity,
         reorder_level: product.reorder_level || 10,
         unit: product.unit || "each",
+        description: product.description || "",
       });
     } else {
-      form.reset({ name: "", sku: "", barcode: "", category_id: "", price: 0, cost_price: 0, stock_quantity: 0, reorder_level: 10, unit: "each" });
+      form.reset({ name: "", sku: "", barcode: "", category_id: "", price: 0, cost_price: 0, stock_quantity: 0, reorder_level: 10, unit: "each", description: "" });
     }
+    if (open && !product && startWithScanner) setScannerOpen(true);
   }, [product, open]);
 
   const handleScanComplete = async (data: ScannedProduct) => {
