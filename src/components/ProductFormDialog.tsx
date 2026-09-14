@@ -24,6 +24,7 @@ const schema = z.object({
   stock_quantity: z.coerce.number().int().min(0),
   reorder_level: z.coerce.number().int().min(0),
   unit: z.string().optional(),
+  description: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -32,9 +33,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product?: Product | null;
+  startWithScanner?: boolean;
 }
 
-export function ProductFormDialog({ open, onOpenChange, product }: Props) {
+export function ProductFormDialog({ open, onOpenChange, product, startWithScanner }: Props) {
   const { data: categories } = useProductCategories();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
