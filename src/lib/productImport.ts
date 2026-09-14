@@ -80,7 +80,7 @@ export function downloadProductTemplate() {
   const wb = XLSX.utils.book_new();
 
   const products = XLSX.utils.json_to_sheet(SAMPLE_ROWS, { header: [...TEMPLATE_COLUMNS] });
-  products["!cols"] = [{ wch: 32 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 20 }, { wch: 18 }, { wch: 16 }, { wch: 14 }];
+  products["!cols"] = [{ wch: 32 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 20 }, { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 40 }];
   XLSX.utils.book_append_sheet(wb, products, "Products");
 
   const info = XLSX.utils.aoa_to_sheet(INSTRUCTIONS);
