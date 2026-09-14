@@ -74,6 +74,7 @@ export function ImportProductsDialog({ open, onOpenChange }: Props) {
         cost_price: r.cost_price,
         stock_quantity: r.stock_quantity,
         reorder_level: r.reorder_level,
+        description: r.description || null,
         is_active: true,
       }));
 
