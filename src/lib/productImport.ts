@@ -125,6 +125,7 @@ export async function parseProductWorkbook(file: File): Promise<ParsedRow[]> {
         cost_price: num(pick(r, "Cost Price", "Cost")),
         stock_quantity: num(pick(r, "Stock Quantity", "Stock")),
         reorder_level: num(pick(r, "Reorder Level", "Reorder"), 10),
+        description: str(pick(r, "Description")),
       };
       if (!parsed.name) parsed.error = "Product name is missing";
       else if (!parsed.sku) parsed.error = "SKU is missing";
