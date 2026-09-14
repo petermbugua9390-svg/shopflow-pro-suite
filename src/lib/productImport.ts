@@ -10,6 +10,7 @@ export const TEMPLATE_COLUMNS = [
   "Cost Price (KSh)",
   "Stock Quantity",
   "Reorder Level",
+  "Description",
 ] as const;
 
 export interface ParsedRow {
@@ -23,6 +24,7 @@ export interface ParsedRow {
   cost_price: number;
   stock_quantity: number;
   reorder_level: number;
+  description: string;
   error?: string;
 }
 
@@ -37,6 +39,7 @@ const SAMPLE_ROWS = [
     "Cost Price (KSh)": 60,
     "Stock Quantity": 120,
     "Reorder Level": 24,
+    Description: "500ml PET bottle soft drink",
   },
   {
     "Product Name*": "Unga Maize Flour 2kg",
@@ -48,6 +51,7 @@ const SAMPLE_ROWS = [
     "Cost Price (KSh)": 178,
     "Stock Quantity": 50,
     "Reorder Level": 10,
+    Description: "2kg pack of sifted maize meal",
   },
 ];
 
