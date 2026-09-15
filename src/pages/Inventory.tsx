@@ -25,6 +25,8 @@ export default function Inventory() {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [adjustProduct, setAdjustProduct] = useState<Product | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [scanMode, setScanMode] = useState(false);
 
   const items = products || [];
   const totalValue = items.reduce((s, p) => s + p.price * p.stock_quantity, 0);
