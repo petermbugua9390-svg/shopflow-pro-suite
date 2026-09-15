@@ -165,6 +165,13 @@ export function ProductFormDialog({ open, onOpenChange, product, startWithScanne
                     <FormMessage />
                   </FormItem>
                 )} />
+                <FormField control={form.control} name="description" render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Description</FormLabel>
+                    <FormControl><Textarea rows={2} {...field} value={field.value ?? ""} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
                 <FormField control={form.control} name="sku" render={({ field }) => (
                   <FormItem>
                     <FormLabel>SKU</FormLabel>
