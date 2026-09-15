@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { useProducts, useDeleteProduct, type Product } from "@/hooks/useProducts";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
 import { StockAdjustDialog } from "@/components/StockAdjustDialog";
-import { Search, Download, Plus, ArrowUpDown, Pencil, Trash2, SlidersHorizontal } from "lucide-react";
+import { Search, Download, Plus, ArrowUpDown, Pencil, Trash2, SlidersHorizontal, FileSpreadsheet, Camera } from "lucide-react";
+import { ImportProductsDialog } from "@/components/ImportProductsDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,8 @@ export default function Inventory() {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [adjustProduct, setAdjustProduct] = useState<Product | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [scanMode, setScanMode] = useState(false);
 
   const items = products || [];
   const totalValue = items.reduce((s, p) => s + p.price * p.stock_quantity, 0);
@@ -52,11 +55,19 @@ export default function Inventory() {
 
   const handleEdit = (product: Product) => {
     setEditProduct(product);
+    setScanMode(false);
     setFormOpen(true);
   };
 
   const handleAdd = () => {
     setEditProduct(null);
+    setScanMode(false);
+    setFormOpen(true);
+  };
+
+  const handleScan = () => {
+    setEditProduct(null);
+    setScanMode(true);
     setFormOpen(true);
   };
 
@@ -102,8 +113,10 @@ export default function Inventory() {
           <h1 className="text-2xl font-bold tracking-tight">Inventory</h1>
           <p className="text-sm text-muted-foreground">Manage products and stock levels</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1.5" />Export</Button>
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}><FileSpreadsheet className="h-4 w-4 mr-1.5" />Import Excel</Button>
+          <Button variant="outline" size="sm" onClick={handleScan}><Camera className="h-4 w-4 mr-1.5" />Scan with AI</Button>
           <Button size="sm" onClick={handleAdd}><Plus className="h-4 w-4 mr-1.5" />Add Product</Button>
         </div>
       </div>
@@ -200,7 +213,8 @@ export default function Inventory() {
         </CardContent>
       </Card>
 
-      <ProductFormDialog open={formOpen} onOpenChange={setFormOpen} product={editProduct} />
+      <ProductFormDialog open={formOpen} onOpenChange={setFormOpen} product={editProduct} startWithScanner={scanMode} />
+      <ImportProductsDialog open={importOpen} onOpenChange={setImportOpen} />
       <StockAdjustDialog product={adjustProduct} open={!!adjustProduct} onOpenChange={(o) => !o && setAdjustProduct(null)} />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

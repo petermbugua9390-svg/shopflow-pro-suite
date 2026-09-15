@@ -6,6 +6,7 @@ import { Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useProductCategories, useCreateProduct, useUpdateProduct, type Product } from "@/hooks/useProducts";
@@ -109,6 +110,7 @@ export function ProductFormDialog({ open, onOpenChange, product, startWithScanne
       stock_quantity: 0,
       reorder_level: 10,
       unit: data.unit || "each",
+      description: data.description || "",
     });
   };
 
@@ -123,6 +125,7 @@ export function ProductFormDialog({ open, onOpenChange, product, startWithScanne
       unit: values.unit || "each",
       category_id: values.category_id || null,
       barcode: values.barcode || null,
+      description: values.description || null,
     };
     if (product) {
       updateProduct.mutate({ id: product.id, ...payload }, { onSuccess: () => onOpenChange(false) });
@@ -160,6 +163,13 @@ export function ProductFormDialog({ open, onOpenChange, product, startWithScanne
                   <FormItem className="col-span-2">
                     <FormLabel>Product Name</FormLabel>
                     <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="description" render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Description</FormLabel>
+                    <FormControl><Textarea rows={2} {...field} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
