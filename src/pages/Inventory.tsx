@@ -55,11 +55,19 @@ export default function Inventory() {
 
   const handleEdit = (product: Product) => {
     setEditProduct(product);
+    setScanMode(false);
     setFormOpen(true);
   };
 
   const handleAdd = () => {
     setEditProduct(null);
+    setScanMode(false);
+    setFormOpen(true);
+  };
+
+  const handleScan = () => {
+    setEditProduct(null);
+    setScanMode(true);
     setFormOpen(true);
   };
 
