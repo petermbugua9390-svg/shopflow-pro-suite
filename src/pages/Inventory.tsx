@@ -213,7 +213,8 @@ export default function Inventory() {
         </CardContent>
       </Card>
 
-      <ProductFormDialog open={formOpen} onOpenChange={setFormOpen} product={editProduct} />
+      <ProductFormDialog open={formOpen} onOpenChange={setFormOpen} product={editProduct} startWithScanner={scanMode} />
+      <ImportProductsDialog open={importOpen} onOpenChange={setImportOpen} />
       <StockAdjustDialog product={adjustProduct} open={!!adjustProduct} onOpenChange={(o) => !o && setAdjustProduct(null)} />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
