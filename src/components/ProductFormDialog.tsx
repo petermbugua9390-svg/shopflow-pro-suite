@@ -109,6 +109,7 @@ export function ProductFormDialog({ open, onOpenChange, product, startWithScanne
       stock_quantity: 0,
       reorder_level: 10,
       unit: data.unit || "each",
+      description: data.description || "",
     });
   };
 
@@ -123,6 +124,7 @@ export function ProductFormDialog({ open, onOpenChange, product, startWithScanne
       unit: values.unit || "each",
       category_id: values.category_id || null,
       barcode: values.barcode || null,
+      description: values.description || null,
     };
     if (product) {
       updateProduct.mutate({ id: product.id, ...payload }, { onSuccess: () => onOpenChange(false) });
