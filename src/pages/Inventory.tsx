@@ -102,8 +102,10 @@ export default function Inventory() {
           <h1 className="text-2xl font-bold tracking-tight">Inventory</h1>
           <p className="text-sm text-muted-foreground">Manage products and stock levels</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1.5" />Export</Button>
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}><FileSpreadsheet className="h-4 w-4 mr-1.5" />Import Excel</Button>
+          <Button variant="outline" size="sm" onClick={handleScan}><Camera className="h-4 w-4 mr-1.5" />Scan with AI</Button>
           <Button size="sm" onClick={handleAdd}><Plus className="h-4 w-4 mr-1.5" />Add Product</Button>
         </div>
       </div>
